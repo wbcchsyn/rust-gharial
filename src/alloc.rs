@@ -133,3 +133,33 @@ where
         }
     }
 }
+
+unsafe impl<A> GlobalAlloc for TestAlloc<A>
+where
+    A: GlobalAlloc,
+{
+    unsafe fn alloc(&self, layout: Layout) -> *mut u8 {
+        let ptr = self.alloc.alloc(layout);
+        if !ptr.is_null() {
+            let mut allocatings = self.allocatings.lock().unwrap();
+            let prev = allocatings.insert(ptr, layout);
+            assert_eq!(true, prev.is_none());
+        }
+
+        ptr
+    }
+
+    unsafe fn dealloc(&self, ptr: *mut u8, layout: Layout) {
+        // `GlobalAlloc::dealloc` interface does not define the behavior when ptr is null.
+        assert_eq!(false, ptr.is_null());
+
+        // Enclose to release the lock as soon as possible.
+        {
+            let mut allocatings = self.allocatings.lock().unwrap();
+            let prev = allocatings.remove(&ptr).unwrap();
+            assert_eq!(layout, prev);
+        }
+
+        self.alloc.dealloc(ptr, layout);
+    }
+}
