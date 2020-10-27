@@ -68,3 +68,23 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 //! # alloc
+
+use core::alloc::{GlobalAlloc, Layout};
+use std::alloc::System;
+use std::collections::hash_map::HashMap;
+use std::sync::{Arc, Mutex};
+
+/// `TestAlloc` is a wrapper of `GlobalAlloc` for test.
+/// This checks the followings.
+///
+/// - Method `dealloc` checks the argument `layout` matches to what passed to `alloc` .
+/// - All the allocated memories have already been deallocated on the drop.
+///   (Cloned instances shares the allocating memory information. It is checked
+///   when the last cloned instance is dropped.)
+pub struct TestAlloc<A = System>
+where
+    A: GlobalAlloc,
+{
+    alloc: A,
+    allocatings: Arc<Mutex<HashMap<*mut u8, Layout>>>,
+}
