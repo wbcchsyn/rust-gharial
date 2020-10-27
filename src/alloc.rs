@@ -88,3 +88,15 @@ where
     alloc: A,
     allocatings: Arc<Mutex<HashMap<*mut u8, Layout>>>,
 }
+
+impl<A> Drop for TestAlloc<A>
+where
+    A: GlobalAlloc,
+{
+    fn drop(&mut self) {
+        if Arc::strong_count(&self.allocatings) == 1 {
+            let allocatings = self.allocatings.lock().unwrap();
+            assert_eq!(true, allocatings.is_empty());
+        }
+    }
+}
