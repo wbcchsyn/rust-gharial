@@ -89,6 +89,15 @@ where
     allocatings: Arc<Mutex<HashMap<*mut u8, Layout>>>,
 }
 
+impl<A> Default for TestAlloc<A>
+where
+    A: GlobalAlloc + Default,
+{
+    fn default() -> Self {
+        Self::from(A::default())
+    }
+}
+
 impl<A> From<A> for TestAlloc<A>
 where
     A: GlobalAlloc,
