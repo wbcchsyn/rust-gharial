@@ -110,6 +110,18 @@ where
     }
 }
 
+impl<A> Clone for TestAlloc<A>
+where
+    A: GlobalAlloc + Clone,
+{
+    fn clone(&self) -> Self {
+        Self {
+            alloc: self.alloc.clone(),
+            allocatings: self.allocatings.clone(),
+        }
+    }
+}
+
 impl<A> Drop for TestAlloc<A>
 where
     A: GlobalAlloc,
