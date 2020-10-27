@@ -67,10 +67,99 @@
 // DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-#![deny(missing_docs)]
+//! # alloc
 
-//! # test-allocator
+use core::alloc::{GlobalAlloc, Layout};
+use std::alloc::System;
+use std::collections::hash_map::HashMap;
+use std::sync::{Arc, Mutex};
 
-mod alloc;
+/// `TestAlloc` is a wrapper of `GlobalAlloc` for test.
+/// This checks the followings.
+///
+/// - Method `dealloc` checks the argument `layout` matches to what passed to `alloc` .
+/// - All the allocated memories have already been deallocated on the drop.
+///   (Cloned instances shares the allocating memory information. It is checked
+///   when the last cloned instance is dropped.)
+pub struct TestAlloc<A = System>
+where
+    A: GlobalAlloc,
+{
+    alloc: A,
+    allocatings: Arc<Mutex<HashMap<*mut u8, Layout>>>,
+}
 
-pub use alloc::TestAlloc;
+impl<A> Default for TestAlloc<A>
+where
+    A: GlobalAlloc + Default,
+{
+    fn default() -> Self {
+        Self::from(A::default())
+    }
+}
+
+impl<A> From<A> for TestAlloc<A>
+where
+    A: GlobalAlloc,
+{
+    fn from(inner: A) -> Self {
+        Self {
+            alloc: inner,
+            allocatings: Arc::default(),
+        }
+    }
+}
+
+impl<A> Clone for TestAlloc<A>
+where
+    A: GlobalAlloc + Clone,
+{
+    fn clone(&self) -> Self {
+        Self {
+            alloc: self.alloc.clone(),
+            allocatings: self.allocatings.clone(),
+        }
+    }
+}
+
+impl<A> Drop for TestAlloc<A>
+where
+    A: GlobalAlloc,
+{
+    fn drop(&mut self) {
+        if Arc::strong_count(&self.allocatings) == 1 {
+            let allocatings = self.allocatings.lock().unwrap();
+            assert_eq!(true, allocatings.is_empty());
+        }
+    }
+}
+
+unsafe impl<A> GlobalAlloc for TestAlloc<A>
+where
+    A: GlobalAlloc,
+{
+    unsafe fn alloc(&self, layout: Layout) -> *mut u8 {
+        let ptr = self.alloc.alloc(layout);
+        if !ptr.is_null() {
+            let mut allocatings = self.allocatings.lock().unwrap();
+            let prev = allocatings.insert(ptr, layout);
+            assert_eq!(true, prev.is_none());
+        }
+
+        ptr
+    }
+
+    unsafe fn dealloc(&self, ptr: *mut u8, layout: Layout) {
+        // `GlobalAlloc::dealloc` interface does not define the behavior when ptr is null.
+        assert_eq!(false, ptr.is_null());
+
+        // Enclose to release the lock as soon as possible.
+        {
+            let mut allocatings = self.allocatings.lock().unwrap();
+            let prev = allocatings.remove(&ptr).unwrap();
+            assert_eq!(layout, prev);
+        }
+
+        self.alloc.dealloc(ptr, layout);
+    }
+}
