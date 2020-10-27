@@ -1,0 +1,23 @@
+#!/bin/sh
+
+check_license() {
+    local path="$1"
+    if ! grep -q "LGPL-3.0-or-later OR Apache-2.0 OR BSD-2-Clause OR MIT" "$path"; then
+        echo "$path" 'lacks of the license.' >&2
+        exit 1
+    fi
+}
+
+
+(
+    cd `git rev-parse --show-toplevel`
+
+    for f in $(find src -type f -name '*.rs'); do
+        check_license "$f"
+    done
+
+    cargo fmt -- --check || exit "$?"
+    cargo test || exit "$?"
+
+    exit 0
+)
