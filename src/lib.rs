@@ -72,3 +72,5 @@
 //! # test-allocator
 
 mod alloc;
+
+pub use alloc::TestAlloc;
