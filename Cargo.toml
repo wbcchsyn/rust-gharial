@@ -1,5 +1,5 @@
 [package]
-name = "test-alloc"
+name = "alligator"
 version = "0.1.0"
 authors = ["Yoshida Shin <wbcchsyn@gmail.com>"]
 edition = "2018"

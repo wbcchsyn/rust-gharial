@@ -69,7 +69,7 @@
 
 #![deny(missing_docs)]
 
-//! # test-allocator
+//! # Alligator
 
 mod alloc;
 
