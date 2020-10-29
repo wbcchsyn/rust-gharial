@@ -201,6 +201,15 @@ where
     alloc: A,
 }
 
+impl<A> Default for RandomFailureAlloc<A>
+where
+    A: GlobalAlloc + Default,
+{
+    fn default() -> Self {
+        Self::from(A::default())
+    }
+}
+
 impl<A> From<A> for RandomFailureAlloc<A>
 where
     A: GlobalAlloc,
