@@ -186,3 +186,15 @@ unsafe impl GlobalAlloc for FailureAlloc {
         assert!(false)
     }
 }
+
+/// `RandomFailureAlloc<A>` behaves like `TestAlloc<A>` except for that it occasionally fails
+/// to allocate memory. i.e. `RandomFailureAlloc::alloc` can return null pointer before
+/// having consumed the OS memory.
+///
+/// The failure properbility is 1/16.
+pub struct RandomFailureAlloc<A>
+where
+    A: GlobalAlloc,
+{
+    alloc: TestAlloc<A>,
+}
