@@ -218,3 +218,12 @@ where
         Self { alloc }
     }
 }
+
+impl<A> Clone for RandomFailureAlloc<A>
+where
+    A: GlobalAlloc + Clone,
+{
+    fn clone(&self) -> Self {
+        Self::from(self.alloc.clone())
+    }
+}
