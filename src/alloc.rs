@@ -187,14 +187,16 @@ unsafe impl GlobalAlloc for FailureAlloc {
     }
 }
 
-/// `RandomFailureAlloc<A>` behaves like `TestAlloc<A>` except for that it occasionally fails
-/// to allocate memory. i.e. `RandomFailureAlloc::alloc` can return null pointer before
-/// having consumed the OS memory.
+/// `RandomFailureAlloc<A>` is a wrapper of `GlobalAlloc` .
+///
+/// It usually delegates the requests to the backend allocator `A` , however,
+/// the allocation will fail occasionally. i.e. `RandomFailureAlloc::alloc` can
+/// return null pointer before having consumed the OS memory.
 ///
 /// The failure properbility is 1/16.
-pub struct RandomFailureAlloc<A>
+pub struct RandomFailureAlloc<A = TestAlloc<System>>
 where
     A: GlobalAlloc,
 {
-    alloc: TestAlloc<A>,
+    alloc: A,
 }
