@@ -170,3 +170,9 @@ where
 /// returns null pointer.
 #[derive(Clone, Copy)]
 pub struct FailureAlloc;
+
+impl Default for FailureAlloc {
+    fn default() -> Self {
+        Self
+    }
+}
