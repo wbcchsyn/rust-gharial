@@ -176,3 +176,13 @@ impl Default for FailureAlloc {
         Self
     }
 }
+
+unsafe impl GlobalAlloc for FailureAlloc {
+    unsafe fn alloc(&self, _layout: Layout) -> *mut u8 {
+        core::ptr::null_mut()
+    }
+
+    unsafe fn dealloc(&self, _ptr: *mut u8, _layout: Layout) {
+        assert!(false)
+    }
+}
