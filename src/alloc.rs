@@ -163,3 +163,26 @@ where
         self.alloc.dealloc(ptr, layout);
     }
 }
+
+/// `FailureAlloc` is an implementation for `GlobalAlloc` .
+///
+/// It always fails to allocate memory. i.e. `FailureAlloc::alloc` always
+/// returns null pointer.
+#[derive(Clone, Copy)]
+pub struct FailureAlloc;
+
+impl Default for FailureAlloc {
+    fn default() -> Self {
+        Self
+    }
+}
+
+unsafe impl GlobalAlloc for FailureAlloc {
+    unsafe fn alloc(&self, _layout: Layout) -> *mut u8 {
+        core::ptr::null_mut()
+    }
+
+    unsafe fn dealloc(&self, _ptr: *mut u8, _layout: Layout) {
+        assert!(false)
+    }
+}
