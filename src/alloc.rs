@@ -166,6 +166,16 @@ where
     }
 }
 
+// `Send` is not implemented automatically because the key of the `allocating` , i.e. *mut u8
+// does not implement `Send` . However, it is used as an integer and never to be dereferenced.
+// It is safe to implement `Send` manually.
+unsafe impl<A> Send for TestAlloc<A> where A: GlobalAlloc + Send {}
+
+// `Send` is not implemented automatically because the key of the `allocating` , i.e. *mut u8
+// does not implement `Send` . However, it is used as an integer and never to be dereferenced.
+// It is safe to implement `Send` manually.
+unsafe impl<A> Sync for TestAlloc<A> where A: GlobalAlloc + Send + Sync {}
+
 /// `FailureAlloc` is an implementation for `GlobalAlloc` .
 ///
 /// It always fails to allocate memory. i.e. `FailureAlloc::alloc` always
