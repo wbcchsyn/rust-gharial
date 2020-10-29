@@ -9,3 +9,4 @@ edition = "2018"
 License = "LGPL-3.0-or-later OR Apache-2.0 OR BSD-2-Clause OR MIT"
 
 [dependencies]
+rand = "0.7"

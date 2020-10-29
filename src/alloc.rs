@@ -69,6 +69,8 @@
 
 //! # alloc
 
+extern crate rand;
+
 use core::alloc::{GlobalAlloc, Layout};
 use std::alloc::System;
 use std::collections::hash_map::HashMap;
@@ -184,5 +186,64 @@ unsafe impl GlobalAlloc for FailureAlloc {
 
     unsafe fn dealloc(&self, _ptr: *mut u8, _layout: Layout) {
         assert!(false)
+    }
+}
+
+/// `RandomFailureAlloc<A>` is a wrapper of `GlobalAlloc` .
+///
+/// It usually delegates the requests to the backend allocator `A` , however,
+/// the allocation will fail occasionally. i.e. `RandomFailureAlloc::alloc` can
+/// return null pointer before having consumed the OS memory.
+///
+/// The failure properbility is 1/16.
+pub struct RandomFailureAlloc<A = TestAlloc<System>>
+where
+    A: GlobalAlloc,
+{
+    alloc: A,
+}
+
+impl<A> Default for RandomFailureAlloc<A>
+where
+    A: GlobalAlloc + Default,
+{
+    fn default() -> Self {
+        Self::from(A::default())
+    }
+}
+
+impl<A> From<A> for RandomFailureAlloc<A>
+where
+    A: GlobalAlloc,
+{
+    fn from(alloc: A) -> Self {
+        Self { alloc }
+    }
+}
+
+impl<A> Clone for RandomFailureAlloc<A>
+where
+    A: GlobalAlloc + Clone,
+{
+    fn clone(&self) -> Self {
+        Self::from(self.alloc.clone())
+    }
+}
+
+unsafe impl<A> GlobalAlloc for RandomFailureAlloc<A>
+where
+    A: GlobalAlloc,
+{
+    unsafe fn alloc(&self, layout: Layout) -> *mut u8 {
+        if rand::random::<u8>() % 16 == 0 {
+            core::ptr::null_mut()
+        } else {
+            self.alloc.alloc(layout)
+        }
+    }
+
+    unsafe fn dealloc(&self, ptr: *mut u8, layout: Layout) {
+        assert_eq!(false, ptr.is_null());
+        self.alloc.dealloc(ptr, layout);
     }
 }

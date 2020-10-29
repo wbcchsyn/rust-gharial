@@ -74,4 +74,5 @@
 mod alloc;
 
 pub use alloc::FailureAlloc;
+pub use alloc::RandomFailureAlloc;
 pub use alloc::TestAlloc;
