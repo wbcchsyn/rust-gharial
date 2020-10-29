@@ -200,3 +200,12 @@ where
 {
     alloc: A,
 }
+
+impl<A> From<A> for RandomFailureAlloc<A>
+where
+    A: GlobalAlloc,
+{
+    fn from(alloc: A) -> Self {
+        Self { alloc }
+    }
+}
