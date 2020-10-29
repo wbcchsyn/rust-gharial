@@ -69,6 +69,8 @@
 
 //! # alloc
 
+extern crate rand;
+
 use core::alloc::{GlobalAlloc, Layout};
 use std::alloc::System;
 use std::collections::hash_map::HashMap;
@@ -225,5 +227,23 @@ where
 {
     fn clone(&self) -> Self {
         Self::from(self.alloc.clone())
+    }
+}
+
+unsafe impl<A> GlobalAlloc for RandomFailureAlloc<A>
+where
+    A: GlobalAlloc,
+{
+    unsafe fn alloc(&self, layout: Layout) -> *mut u8 {
+        if rand::random::<u8>() % 16 == 0 {
+            core::ptr::null_mut()
+        } else {
+            self.alloc.alloc(layout)
+        }
+    }
+
+    unsafe fn dealloc(&self, ptr: *mut u8, layout: Layout) {
+        assert_eq!(false, ptr.is_null());
+        self.alloc.dealloc(ptr, layout);
     }
 }
