@@ -74,13 +74,21 @@ use std::alloc::System;
 use std::collections::hash_map::HashMap;
 use std::sync::{Arc, Mutex};
 
-/// `TestAlloc` is a wrapper of `GlobalAlloc` for test.
-/// This checks the followings.
+/// `TestAlloc` is a wrapper of `GlobalAlloc` and it also implements `GlobalAlloc` to test memory
+/// leak and so on.
 ///
-/// - Method `dealloc` checks the argument `layout` matches to what passed to `alloc` .
-/// - All the allocated memories have already been deallocated on the drop.
-///   (Cloned instances shares the allocating memory information. It is checked
-///   when the last cloned instance is dropped.)
+/// It delegates the requests to the inner allocator after testing.
+///
+/// The checks are followings.
+///
+/// - The argument `*mut u8` passed to `dealloc` is not null. (The behavior is undefined
+///   according to `GlobalAlloc` interface.)
+/// - The consistency of the argument `Layout` .
+///   i.e. the argument passed to `dealloc` matches to that passed to `alloc` having returned
+///   the corresponding pointer.
+/// - All allocated memories have already been deallocated on the drop.
+///   (Note that cloned instances share the allocating memory information. The check is done when the
+///   last cloned instance is dropped.)
 pub struct TestAlloc<A = System>
 where
     A: GlobalAlloc,
@@ -164,20 +172,18 @@ where
     }
 }
 
-// `Send` is not implemented automatically because the key of the `allocating` , i.e. *mut u8
+// `Send` is not implemented automatically because the key type of the `allocating` (*mut u8)
 // does not implement `Send` . However, it is used as an integer and never to be dereferenced.
 // It is safe to implement `Send` manually.
 unsafe impl<A> Send for TestAlloc<A> where A: GlobalAlloc + Send {}
 
-// `Send` is not implemented automatically because the key of the `allocating` , i.e. *mut u8
+// `Send` is not implemented automatically because the key type of the `allocating` (*mut u8)
 // does not implement `Send` . However, it is used as an integer and never to be dereferenced.
 // It is safe to implement `Send` manually.
 unsafe impl<A> Sync for TestAlloc<A> where A: GlobalAlloc + Send + Sync {}
 
-/// `FailureAlloc` is an implementation for `GlobalAlloc` .
-///
-/// It always fails to allocate memory. i.e. `FailureAlloc::alloc` always
-/// returns null pointer.
+/// `FailureAlloc` is an implementation for `GlobalAlloc` , which always fails.
+/// For example, `FailureAlloc::alloc` always returns a null pointer.
 #[derive(Clone, Copy)]
 pub struct FailureAlloc;
 
@@ -197,11 +203,11 @@ unsafe impl GlobalAlloc for FailureAlloc {
     }
 }
 
-/// `RandomFailureAlloc<A>` is a wrapper of `GlobalAlloc` .
+/// `RandomFailureAlloc` is a wrapper of `GlobalAlloc` and it also implements `GlobalAlloc` , which
+/// occasionally fails to allocate.
 ///
-/// It usually delegates the requests to the backend allocator `A` , however,
-/// the allocation will fail occasionally. i.e. `RandomFailureAlloc::alloc` can
-/// return null pointer before having consumed the OS memory.
+/// It usually delegates the requests to the inner allocator, however, sometimes fails to allocate
+/// memory on purpose. i.e. `RandomFailureAlloc::alloc` can return null pointer before memory exhaustion.
 ///
 /// The failure properbility is 1/16.
 pub struct RandomFailureAlloc<A = TestAlloc<System>>
