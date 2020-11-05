@@ -74,10 +74,9 @@ use std::alloc::System;
 use std::collections::hash_map::HashMap;
 use std::sync::{Arc, Mutex};
 
-/// `TestAlloc` is a wrapper of `GlobalAlloc` and it also implements `GlobalAlloc` to test memory
-/// leak and so on.
+/// `TestAlloc` is a implementation for `GlobalAlloc` to test memory leak and so on.
 ///
-/// It delegates the requests to the inner allocator after testing.
+/// It is a wrapper of another `GlobalAlloc` , and delegates the requests to the inner after testing.
 ///
 /// The checks are followings.
 ///
@@ -203,10 +202,9 @@ unsafe impl GlobalAlloc for NeverAlloc {
     }
 }
 
-/// `MaybeAlloc` is a wrapper of `GlobalAlloc` and it also implements `GlobalAlloc` , which
-/// occasionally fails to allocate.
+/// `MaybeAlloc` is an implementation for `GlobalAlloc` , which occasionally fails to allocate.
 ///
-/// It usually delegates the requests to the inner allocator, however, sometimes fails to allocate
+/// It is a wrapper of another `GlobalAlloc` , and delegates the requests to the inner, however, sometimes fails to allocate
 /// memory on purpose. i.e. `MaybeAlloc::alloc` can return null pointer before memory exhaustion.
 ///
 /// The failure properbility is 1/16.
