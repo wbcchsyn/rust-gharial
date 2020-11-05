@@ -85,6 +85,6 @@
 
 mod alloc;
 
-pub use alloc::FailureAlloc;
-pub use alloc::RandomFailureAlloc;
+pub use alloc::MaybeAlloc;
+pub use alloc::NeverAlloc;
 pub use alloc::TestAlloc;

@@ -182,18 +182,18 @@ unsafe impl<A> Send for TestAlloc<A> where A: GlobalAlloc + Send {}
 // It is safe to implement `Send` manually.
 unsafe impl<A> Sync for TestAlloc<A> where A: GlobalAlloc + Send + Sync {}
 
-/// `FailureAlloc` is an implementation for `GlobalAlloc` , which always fails.
-/// For example, `FailureAlloc::alloc` always returns a null pointer.
+/// `NeverAlloc` is an implementation for `GlobalAlloc` , which always fails.
+/// For example, `NeverAlloc::alloc` always returns a null pointer.
 #[derive(Clone, Copy)]
-pub struct FailureAlloc;
+pub struct NeverAlloc;
 
-impl Default for FailureAlloc {
+impl Default for NeverAlloc {
     fn default() -> Self {
         Self
     }
 }
 
-unsafe impl GlobalAlloc for FailureAlloc {
+unsafe impl GlobalAlloc for NeverAlloc {
     unsafe fn alloc(&self, _layout: Layout) -> *mut u8 {
         core::ptr::null_mut()
     }
@@ -203,21 +203,21 @@ unsafe impl GlobalAlloc for FailureAlloc {
     }
 }
 
-/// `RandomFailureAlloc` is a wrapper of `GlobalAlloc` and it also implements `GlobalAlloc` , which
+/// `MaybeAlloc` is a wrapper of `GlobalAlloc` and it also implements `GlobalAlloc` , which
 /// occasionally fails to allocate.
 ///
 /// It usually delegates the requests to the inner allocator, however, sometimes fails to allocate
-/// memory on purpose. i.e. `RandomFailureAlloc::alloc` can return null pointer before memory exhaustion.
+/// memory on purpose. i.e. `MaybeAlloc::alloc` can return null pointer before memory exhaustion.
 ///
 /// The failure properbility is 1/16.
-pub struct RandomFailureAlloc<A = TestAlloc<System>>
+pub struct MaybeAlloc<A = TestAlloc<System>>
 where
     A: GlobalAlloc,
 {
     alloc: A,
 }
 
-impl<A> Default for RandomFailureAlloc<A>
+impl<A> Default for MaybeAlloc<A>
 where
     A: GlobalAlloc + Default,
 {
@@ -226,7 +226,7 @@ where
     }
 }
 
-impl<A> From<A> for RandomFailureAlloc<A>
+impl<A> From<A> for MaybeAlloc<A>
 where
     A: GlobalAlloc,
 {
@@ -235,7 +235,7 @@ where
     }
 }
 
-impl<A> Clone for RandomFailureAlloc<A>
+impl<A> Clone for MaybeAlloc<A>
 where
     A: GlobalAlloc + Clone,
 {
@@ -244,7 +244,7 @@ where
     }
 }
 
-unsafe impl<A> GlobalAlloc for RandomFailureAlloc<A>
+unsafe impl<A> GlobalAlloc for MaybeAlloc<A>
 where
     A: GlobalAlloc,
 {
