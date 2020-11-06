@@ -151,6 +151,13 @@ where
 
         unsafe { &mut *ptr }
     }
+
+    /// Consumes the `TestBox` and returning a wrapped raw pointer.
+    pub fn into_raw(mut tb: Self) -> *mut T {
+        let ptr = tb.ptr;
+        tb.ptr = core::ptr::null_mut();
+        ptr
+    }
 }
 
 #[cfg(test)]
@@ -187,6 +194,30 @@ mod tests {
 
         let s = TestBox::leak(tb);
         let ptr = s as *mut String;
+        unsafe { ptr.drop_in_place() };
+    }
+
+    #[test]
+    fn into_raw() {
+        let alloc = TestAlloc::<System>::default();
+        let tb = TestBox::new("foo".to_string(), &alloc);
+
+        let ptr = TestBox::into_raw(tb);
+
+        let layout = Layout::new::<String>();
+        unsafe {
+            ptr.drop_in_place();
+            alloc.dealloc(ptr as *mut u8, layout);
+        }
+    }
+
+    #[test]
+    #[should_panic]
+    fn into_raw_without_free() {
+        let alloc = TestAlloc::<System>::default();
+        let tb = TestBox::new("foo".to_string(), &alloc);
+
+        let ptr = TestBox::into_raw(tb);
         unsafe { ptr.drop_in_place() };
     }
 }
