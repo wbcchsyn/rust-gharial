@@ -106,3 +106,32 @@ where
         Self { ptr, alloc }
     }
 }
+
+impl<T, A> Drop for TestBox<'_, T, A>
+where
+    A: GlobalAlloc,
+{
+    fn drop(&mut self) {
+        if self.ptr.is_null() {
+            return;
+        }
+
+        unsafe {
+            self.ptr.drop_in_place();
+            let layout = Layout::new::<T>();
+            self.alloc.dealloc(self.ptr as *mut u8, layout);
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::alloc::System;
+
+    #[test]
+    fn constructor() {
+        let alloc = TestAlloc::<System>::default();
+        let _tb = TestBox::new(35, &alloc);
+    }
+}
