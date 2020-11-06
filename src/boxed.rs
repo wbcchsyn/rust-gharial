@@ -137,6 +137,22 @@ where
     }
 }
 
+impl<'a, T, A> TestBox<'a, T, A>
+where
+    A: GlobalAlloc,
+{
+    /// Consumes and leaks `TestBox` .
+    pub fn leak(mut tb: Self) -> &'a mut T
+    where
+        T: 'a,
+    {
+        let ptr = tb.ptr;
+        tb.ptr = core::ptr::null_mut();
+
+        unsafe { &mut *ptr }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -146,5 +162,31 @@ mod tests {
     fn constructor() {
         let alloc = TestAlloc::<System>::default();
         let _tb = TestBox::new(35, &alloc);
+    }
+
+    #[test]
+    fn leak() {
+        let alloc = TestAlloc::<System>::default();
+        let tb = TestBox::new("foo".to_string(), &alloc);
+
+        let s = TestBox::leak(tb);
+        let ptr = s as *mut String;
+
+        let layout = Layout::new::<String>();
+        unsafe {
+            ptr.drop_in_place();
+            alloc.dealloc(ptr as *mut u8, layout);
+        }
+    }
+
+    #[test]
+    #[should_panic]
+    fn leak_without_free() {
+        let alloc = TestAlloc::<System>::default();
+        let tb = TestBox::new("foo".to_string(), &alloc);
+
+        let s = TestBox::leak(tb);
+        let ptr = s as *mut String;
+        unsafe { ptr.drop_in_place() };
     }
 }
