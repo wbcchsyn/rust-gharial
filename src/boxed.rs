@@ -68,7 +68,8 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 use crate::TestAlloc;
-use core::alloc::GlobalAlloc;
+use core::alloc::{GlobalAlloc, Layout};
+use std::alloc::handle_alloc_error;
 
 /// `TestBox` behaves like `std::boxed::Box` except for it owns a reference to a `GlobalAlloc` .
 ///
@@ -87,4 +88,21 @@ where
 {
     ptr: *mut T,
     alloc: &'a A,
+}
+
+impl<'a, T, A> TestBox<'a, T, A>
+where
+    A: GlobalAlloc,
+{
+    /// Creates a new instance.
+    pub fn new(x: T, alloc: &'a A) -> Self {
+        let layout = Layout::new::<T>();
+        let ptr = unsafe { alloc.alloc(layout) as *mut T };
+        if ptr.is_null() {
+            handle_alloc_error(layout);
+        }
+
+        unsafe { ptr.write(x) };
+        Self { ptr, alloc }
+    }
 }
