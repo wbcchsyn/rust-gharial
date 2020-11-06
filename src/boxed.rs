@@ -66,26 +66,3 @@
 // NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
 // DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-
-#![deny(missing_docs)]
-
-//! # Alligator
-//!
-//! `Alligator` is a test tool for program to manipulate memory directly.
-//!
-//! Rust usually follows the rule of RAII (Resource Acquisition is Initialization;)
-//! resources should be released on the drop, however, it is sometimes difficult to design low
-//! level code like that.
-//!
-//! Container object, for example, sometimes allocates heap memory and build elements there.
-//! Then, the programmer could have to drop the elements and deallocate the heap manully; otherwise
-//! some trouble like memory leak could be occurred.
-//!
-//! `Alligator` helps to test such program.
-
-mod alloc;
-mod boxed;
-
-pub use alloc::MaybeAlloc;
-pub use alloc::NeverAlloc;
-pub use alloc::TestAlloc;
