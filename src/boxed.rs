@@ -69,6 +69,7 @@
 
 use crate::TestAlloc;
 use core::alloc::{GlobalAlloc, Layout};
+use core::ops::Deref;
 use std::alloc::handle_alloc_error;
 
 /// `TestBox` behaves like `std::boxed::Box` except for it owns a reference to a `GlobalAlloc` .
@@ -157,6 +158,16 @@ where
         let ptr = tb.ptr;
         tb.ptr = core::ptr::null_mut();
         ptr
+    }
+}
+
+impl<T, A> Deref for TestBox<'_, T, A>
+where
+    A: GlobalAlloc,
+{
+    type Target = T;
+    fn deref(&self) -> &T {
+        unsafe { &*self.ptr }
     }
 }
 
