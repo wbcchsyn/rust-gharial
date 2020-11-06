@@ -105,6 +105,19 @@ where
         unsafe { ptr.write(x) };
         Self { ptr, alloc }
     }
+
+    /// Creates a new instance from raw pointer and a reference to allocator.
+    ///
+    /// After calling this function, the raw pointer is owned by the resulting `TestBox` .
+    /// Specifically, `TestBox::drop` destructs the referenced object and free the pointer.
+    ///
+    /// # Safety
+    ///
+    /// To use this function safe, the ptr should be allocated via `alloc` and it should not be
+    /// freed anywhere else.
+    pub unsafe fn from_raw_alloc(ptr: *mut T, alloc: &'a A) -> Self {
+        Self { ptr, alloc }
+    }
 }
 
 impl<T, A> Drop for TestBox<'_, T, A>
