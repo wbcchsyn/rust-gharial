@@ -66,3 +66,25 @@
 // NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
 // DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+use crate::TestAlloc;
+use core::alloc::GlobalAlloc;
+
+/// `TestBox` behaves like `std::boxed::Box` except for it owns a reference to a `GlobalAlloc` .
+///
+/// The default type of the `GlobalAlloc` reference is &[`TestAlloc`] .
+/// Unlike to `std::boxed::Box` , it cause an assertion error when the `GlobalAlloc` is dropped
+/// unless `TestBox` is surely dropped.
+///
+/// For example, it sometimes requires to allocate heap memory to implement container struct,
+/// and then the elements must be dropped manually. `TestBox` helps the test to make sure the elements
+/// are dropped.
+///
+/// [`TestAlloc`]: struct.TestAlloc.html
+pub struct TestBox<'a, T, A = TestAlloc>
+where
+    A: GlobalAlloc,
+{
+    ptr: *mut T,
+    alloc: &'a A,
+}
