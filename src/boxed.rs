@@ -122,6 +122,16 @@ where
     }
 }
 
+impl<T, A> Clone for TestBox<'_, T, A>
+where
+    T: Clone,
+    A: GlobalAlloc,
+{
+    fn clone(&self) -> Self {
+        Self::new(self.as_ref().clone(), self.alloc)
+    }
+}
+
 impl<T, A> Drop for TestBox<'_, T, A>
 where
     A: GlobalAlloc,
@@ -276,5 +286,12 @@ mod tests {
 
         let ptr = TestBox::into_raw(tb);
         unsafe { ptr.drop_in_place() };
+    }
+
+    #[test]
+    fn clone() {
+        let alloc = TestAlloc::<System>::default();
+        let tb = TestBox::new(35, &alloc);
+        let _cloned = tb.clone();
     }
 }
