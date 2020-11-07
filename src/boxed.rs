@@ -161,6 +161,15 @@ where
     }
 }
 
+impl<T, A> AsRef<T> for TestBox<'_, T, A>
+where
+    A: GlobalAlloc,
+{
+    fn as_ref(&self) -> &T {
+        &*self
+    }
+}
+
 impl<T, A> Deref for TestBox<'_, T, A>
 where
     A: GlobalAlloc,
