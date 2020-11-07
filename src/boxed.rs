@@ -69,6 +69,7 @@
 
 use crate::TestAlloc;
 use core::alloc::{GlobalAlloc, Layout};
+use core::cmp::Ordering;
 use core::ops::{Deref, DerefMut};
 use std::alloc::handle_alloc_error;
 use std::borrow::{Borrow, BorrowMut};
@@ -166,6 +167,30 @@ where
     T: Eq,
     A: GlobalAlloc,
 {
+}
+
+impl<T, A> PartialOrd<Self> for TestBox<'_, T, A>
+where
+    T: PartialOrd,
+    A: GlobalAlloc,
+{
+    fn partial_cmp(&self, rh: &Self) -> Option<Ordering> {
+        let l: &T = self.borrow();
+        let r: &T = rh.borrow();
+        l.partial_cmp(r)
+    }
+}
+
+impl<T, A> Ord for TestBox<'_, T, A>
+where
+    T: Ord,
+    A: GlobalAlloc,
+{
+    fn cmp(&self, rh: &Self) -> Ordering {
+        let l: &T = self.borrow();
+        let r: &T = rh.borrow();
+        l.cmp(r)
+    }
 }
 
 impl<'a, T, A> TestBox<'a, T, A>
