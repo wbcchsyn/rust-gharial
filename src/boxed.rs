@@ -73,6 +73,7 @@ use core::cmp::Ordering;
 use core::ops::{Deref, DerefMut};
 use std::alloc::handle_alloc_error;
 use std::borrow::{Borrow, BorrowMut};
+use std::hash::{Hash, Hasher};
 
 /// `TestBox` behaves like `std::boxed::Box` except for it owns a reference to a `GlobalAlloc` .
 ///
@@ -190,6 +191,20 @@ where
         let l: &T = self.borrow();
         let r: &T = rh.borrow();
         l.cmp(r)
+    }
+}
+
+impl<T, A> Hash for TestBox<'_, T, A>
+where
+    T: Hash,
+    A: GlobalAlloc,
+{
+    fn hash<H>(&self, state: &mut H)
+    where
+        H: Hasher,
+    {
+        let t: &T = self.borrow();
+        t.hash(state)
     }
 }
 
