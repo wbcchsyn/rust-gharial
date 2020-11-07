@@ -149,6 +149,25 @@ where
     }
 }
 
+impl<T, A> PartialEq<Self> for TestBox<'_, T, A>
+where
+    T: PartialEq,
+    A: GlobalAlloc,
+{
+    fn eq(&self, rh: &Self) -> bool {
+        let l: &T = self.borrow();
+        let r: &T = rh.borrow();
+        l == r
+    }
+}
+
+impl<T, A> Eq for TestBox<'_, T, A>
+where
+    T: Eq,
+    A: GlobalAlloc,
+{
+}
+
 impl<'a, T, A> TestBox<'a, T, A>
 where
     A: GlobalAlloc,
