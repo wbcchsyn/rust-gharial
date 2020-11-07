@@ -71,6 +71,7 @@ use crate::TestAlloc;
 use core::alloc::{GlobalAlloc, Layout};
 use core::ops::{Deref, DerefMut};
 use std::alloc::handle_alloc_error;
+use std::borrow::Borrow;
 
 /// `TestBox` behaves like `std::boxed::Box` except for it owns a reference to a `GlobalAlloc` .
 ///
@@ -176,6 +177,15 @@ where
 {
     fn as_mut(&mut self) -> &mut T {
         &mut *self
+    }
+}
+
+impl<T, A> Borrow<T> for TestBox<'_, T, A>
+where
+    A: GlobalAlloc,
+{
+    fn borrow(&self) -> &T {
+        &*self
     }
 }
 
