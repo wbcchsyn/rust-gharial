@@ -67,8 +67,6 @@
 // DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-//! # alloc
-
 extern crate rand;
 
 use core::alloc::{GlobalAlloc, Layout};
@@ -76,13 +74,20 @@ use std::alloc::System;
 use std::collections::hash_map::HashMap;
 use std::sync::{Arc, Mutex};
 
-/// `TestAlloc` is a wrapper of `GlobalAlloc` for test.
-/// This checks the followings.
+/// `TestAlloc` is a implementation for `GlobalAlloc` to test memory leak and so on.
 ///
-/// - Method `dealloc` checks the argument `layout` matches to what passed to `alloc` .
-/// - All the allocated memories have already been deallocated on the drop.
-///   (Cloned instances shares the allocating memory information. It is checked
-///   when the last cloned instance is dropped.)
+/// It is a wrapper of another `GlobalAlloc` , and delegates the requests to the inner after testing.
+///
+/// The checks are followings.
+///
+/// - The argument `*mut u8` passed to `dealloc` is not null. (The behavior is undefined
+///   according to `GlobalAlloc` interface.)
+/// - The consistency of the argument `Layout` .
+///   i.e. the argument passed to `dealloc` matches to that passed to `alloc` having returned
+///   the corresponding pointer.
+/// - All allocated memories have already been deallocated on the drop.
+///   (Note that cloned instances share the allocating memory information. The check is done when the
+///   last cloned instance is dropped.)
 pub struct TestAlloc<A = System>
 where
     A: GlobalAlloc,
@@ -166,30 +171,28 @@ where
     }
 }
 
-// `Send` is not implemented automatically because the key of the `allocating` , i.e. *mut u8
+// `Send` is not implemented automatically because the key type of the `allocating` (*mut u8)
 // does not implement `Send` . However, it is used as an integer and never to be dereferenced.
 // It is safe to implement `Send` manually.
 unsafe impl<A> Send for TestAlloc<A> where A: GlobalAlloc + Send {}
 
-// `Send` is not implemented automatically because the key of the `allocating` , i.e. *mut u8
+// `Send` is not implemented automatically because the key type of the `allocating` (*mut u8)
 // does not implement `Send` . However, it is used as an integer and never to be dereferenced.
 // It is safe to implement `Send` manually.
 unsafe impl<A> Sync for TestAlloc<A> where A: GlobalAlloc + Send + Sync {}
 
-/// `FailureAlloc` is an implementation for `GlobalAlloc` .
-///
-/// It always fails to allocate memory. i.e. `FailureAlloc::alloc` always
-/// returns null pointer.
+/// `NeverAlloc` is an implementation for `GlobalAlloc` , which always fails.
+/// For example, `NeverAlloc::alloc` always returns a null pointer.
 #[derive(Clone, Copy)]
-pub struct FailureAlloc;
+pub struct NeverAlloc;
 
-impl Default for FailureAlloc {
+impl Default for NeverAlloc {
     fn default() -> Self {
         Self
     }
 }
 
-unsafe impl GlobalAlloc for FailureAlloc {
+unsafe impl GlobalAlloc for NeverAlloc {
     unsafe fn alloc(&self, _layout: Layout) -> *mut u8 {
         core::ptr::null_mut()
     }
@@ -199,21 +202,20 @@ unsafe impl GlobalAlloc for FailureAlloc {
     }
 }
 
-/// `RandomFailureAlloc<A>` is a wrapper of `GlobalAlloc` .
+/// `MaybeAlloc` is an implementation for `GlobalAlloc` , which occasionally fails to allocate.
 ///
-/// It usually delegates the requests to the backend allocator `A` , however,
-/// the allocation will fail occasionally. i.e. `RandomFailureAlloc::alloc` can
-/// return null pointer before having consumed the OS memory.
+/// It is a wrapper of another `GlobalAlloc` , and delegates the requests to the inner, however, sometimes fails to allocate
+/// memory on purpose. i.e. `MaybeAlloc::alloc` can return null pointer before memory exhaustion.
 ///
 /// The failure properbility is 1/16.
-pub struct RandomFailureAlloc<A = TestAlloc<System>>
+pub struct MaybeAlloc<A = TestAlloc<System>>
 where
     A: GlobalAlloc,
 {
     alloc: A,
 }
 
-impl<A> Default for RandomFailureAlloc<A>
+impl<A> Default for MaybeAlloc<A>
 where
     A: GlobalAlloc + Default,
 {
@@ -222,7 +224,7 @@ where
     }
 }
 
-impl<A> From<A> for RandomFailureAlloc<A>
+impl<A> From<A> for MaybeAlloc<A>
 where
     A: GlobalAlloc,
 {
@@ -231,7 +233,7 @@ where
     }
 }
 
-impl<A> Clone for RandomFailureAlloc<A>
+impl<A> Clone for MaybeAlloc<A>
 where
     A: GlobalAlloc + Clone,
 {
@@ -240,7 +242,7 @@ where
     }
 }
 
-unsafe impl<A> GlobalAlloc for RandomFailureAlloc<A>
+unsafe impl<A> GlobalAlloc for MaybeAlloc<A>
 where
     A: GlobalAlloc,
 {

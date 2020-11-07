@@ -1,12 +1,23 @@
 [package]
-name = "test-alloc"
+name = "alligator"
 version = "0.1.0"
 authors = ["Yoshida Shin <wbcchsyn@gmail.com>"]
 edition = "2018"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
-License = "LGPL-3.0-or-later OR Apache-2.0 OR BSD-2-Clause OR MIT"
+description = """
+Alligator is a test tool for program to manipulate memory directly.
+"""
+
+readme = "README.md"
+documentation = "https://wbcchsyn.github.io/rust-alligator/alligator/"
+repository = "https://github.com/wbcchsyn/rust-alligator.git"
+
+keywords = ["test", "memory", "allocator"]
+categories = ["development-tools::testing", "memory-management"]
+
+license = "LGPL-3.0-or-later OR Apache-2.0 OR BSD-2-Clause OR MIT"
 
 [dependencies]
 rand = "0.7"
