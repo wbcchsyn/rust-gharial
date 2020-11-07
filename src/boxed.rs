@@ -170,6 +170,15 @@ where
     }
 }
 
+impl<T, A> AsMut<T> for TestBox<'_, T, A>
+where
+    A: GlobalAlloc,
+{
+    fn as_mut(&mut self) -> &mut T {
+        &mut *self
+    }
+}
+
 impl<T, A> Deref for TestBox<'_, T, A>
 where
     A: GlobalAlloc,
