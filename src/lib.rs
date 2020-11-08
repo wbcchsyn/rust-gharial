@@ -69,9 +69,9 @@
 
 #![deny(missing_docs)]
 
-//! # Alligator
+//! # Gharial
 //!
-//! `Alligator` is a test tool for program to manipulate memory directly.
+//! `Gharial` is a test tool for program to manipulate memory directly.
 //!
 //! Rust usually follows the rule of RAII (Resource Acquisition is Initialization;)
 //! resources should be released on the drop, however, it is sometimes difficult to design low
@@ -81,7 +81,7 @@
 //! Then, the programmer could have to drop the elements and deallocate the heap manully; otherwise
 //! some trouble like memory leak could be occurred.
 //!
-//! `Alligator` helps to test such program.
+//! `Gharial` helps to test such program.
 
 mod alloc;
 mod boxed;
