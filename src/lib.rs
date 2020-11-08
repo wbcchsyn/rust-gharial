@@ -89,3 +89,5 @@ mod boxed;
 pub use alloc::MaybeAlloc;
 pub use alloc::NeverAlloc;
 pub use alloc::TestAlloc;
+
+pub use boxed::TestBox;
