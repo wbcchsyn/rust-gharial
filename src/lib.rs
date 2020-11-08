@@ -84,7 +84,10 @@
 //! `Alligator` helps to test such program.
 
 mod alloc;
+mod boxed;
 
 pub use alloc::MaybeAlloc;
 pub use alloc::NeverAlloc;
 pub use alloc::TestAlloc;
+
+pub use boxed::TestBox;
