@@ -196,7 +196,7 @@ unsafe impl<A> Sync for TestAlloc<A> where A: GlobalAlloc + Send + Sync {}
 
 /// `NeverAlloc` is an implementation for `GlobalAlloc` , which always fails.
 /// For example, `NeverAlloc::alloc` always returns a null pointer.
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub struct NeverAlloc;
 
 impl Default for NeverAlloc {
