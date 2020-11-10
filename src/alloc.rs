@@ -221,6 +221,7 @@ unsafe impl GlobalAlloc for NeverAlloc {
 /// memory on purpose. i.e. `MaybeAlloc::alloc` can return null pointer before memory exhaustion.
 ///
 /// The failure properbility is 1/16.
+#[derive(Debug)]
 pub struct MaybeAlloc<A = TestAlloc<System>>
 where
     A: GlobalAlloc,
