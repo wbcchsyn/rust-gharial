@@ -72,6 +72,7 @@ extern crate rand;
 use core::alloc::{GlobalAlloc, Layout};
 use std::alloc::System;
 use std::collections::hash_map::HashMap;
+use std::fmt;
 use std::sync::{Arc, Mutex};
 
 /// `TestAlloc` is a implementation for `GlobalAlloc` to test memory leak and so on.
@@ -168,6 +169,18 @@ where
         }
 
         self.alloc.dealloc(ptr, layout);
+    }
+}
+
+impl<A> fmt::Debug for TestAlloc<A>
+where
+    A: GlobalAlloc + fmt::Debug,
+{
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("TestAlloc")
+            .field("alloc", &self.alloc)
+            .field("info", &format!("{:p}", self.allocatings))
+            .finish()
     }
 }
 
