@@ -86,6 +86,7 @@ use std::hash::{Hash, Hasher};
 /// are dropped.
 ///
 /// [`TestAlloc`]: struct.TestAlloc.html
+#[derive(Debug)]
 pub struct TestBox<'a, T, A = TestAlloc>
 where
     A: GlobalAlloc,

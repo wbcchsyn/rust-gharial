@@ -72,6 +72,7 @@ extern crate rand;
 use core::alloc::{GlobalAlloc, Layout};
 use std::alloc::System;
 use std::collections::hash_map::HashMap;
+use std::fmt;
 use std::sync::{Arc, Mutex};
 
 /// `TestAlloc` is a implementation for `GlobalAlloc` to test memory leak and so on.
@@ -171,6 +172,18 @@ where
     }
 }
 
+impl<A> fmt::Debug for TestAlloc<A>
+where
+    A: GlobalAlloc + fmt::Debug,
+{
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("TestAlloc")
+            .field("alloc", &self.alloc)
+            .field("info", &format!("{:p}", self.allocatings))
+            .finish()
+    }
+}
+
 // `Send` is not implemented automatically because the key type of the `allocating` (*mut u8)
 // does not implement `Send` . However, it is used as an integer and never to be dereferenced.
 // It is safe to implement `Send` manually.
@@ -183,7 +196,7 @@ unsafe impl<A> Sync for TestAlloc<A> where A: GlobalAlloc + Send + Sync {}
 
 /// `NeverAlloc` is an implementation for `GlobalAlloc` , which always fails.
 /// For example, `NeverAlloc::alloc` always returns a null pointer.
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub struct NeverAlloc;
 
 impl Default for NeverAlloc {
@@ -208,6 +221,7 @@ unsafe impl GlobalAlloc for NeverAlloc {
 /// memory on purpose. i.e. `MaybeAlloc::alloc` can return null pointer before memory exhaustion.
 ///
 /// The failure properbility is 1/16.
+#[derive(Debug)]
 pub struct MaybeAlloc<A = TestAlloc<System>>
 where
     A: GlobalAlloc,
