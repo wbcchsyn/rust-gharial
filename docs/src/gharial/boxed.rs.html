@@ -355,6 +355,7 @@
 <span id="354">354</span>
 <span id="355">355</span>
 <span id="356">356</span>
+<span id="357">357</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright 2020 Shin Yoshida</span>
 <span class="comment">//</span>
@@ -444,6 +445,7 @@
 <span class="doccomment">/// are dropped.</span>
 <span class="doccomment">///</span>
 <span class="doccomment">/// [`TestAlloc`]: struct.TestAlloc.html</span>
+<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">TestBox</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span>, <span class="ident">T</span>, <span class="ident">A</span> <span class="op">=</span> <span class="ident">TestAlloc</span><span class="op">&gt;</span>
 <span class="kw">where</span>
     <span class="ident">A</span>: <span class="ident">GlobalAlloc</span>,

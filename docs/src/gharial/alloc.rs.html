@@ -260,6 +260,20 @@
 <span id="259">259</span>
 <span id="260">260</span>
 <span id="261">261</span>
+<span id="262">262</span>
+<span id="263">263</span>
+<span id="264">264</span>
+<span id="265">265</span>
+<span id="266">266</span>
+<span id="267">267</span>
+<span id="268">268</span>
+<span id="269">269</span>
+<span id="270">270</span>
+<span id="271">271</span>
+<span id="272">272</span>
+<span id="273">273</span>
+<span id="274">274</span>
+<span id="275">275</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright 2020 Shin Yoshida</span>
 <span class="comment">//</span>
@@ -335,6 +349,7 @@
 <span class="kw">use</span> <span class="ident">core</span>::<span class="ident">alloc</span>::{<span class="ident">GlobalAlloc</span>, <span class="ident">Layout</span>};
 <span class="kw">use</span> <span class="ident">std</span>::<span class="ident">alloc</span>::<span class="ident">System</span>;
 <span class="kw">use</span> <span class="ident">std</span>::<span class="ident">collections</span>::<span class="ident">hash_map</span>::<span class="ident">HashMap</span>;
+<span class="kw">use</span> <span class="ident">std</span>::<span class="ident">fmt</span>;
 <span class="kw">use</span> <span class="ident">std</span>::<span class="ident">sync</span>::{<span class="ident">Arc</span>, <span class="ident">Mutex</span>};
 
 <span class="doccomment">/// `TestAlloc` is a implementation for `GlobalAlloc` to test memory leak and so on.</span>
@@ -434,6 +449,18 @@
     }
 }
 
+<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">A</span><span class="op">&gt;</span> <span class="ident">fmt</span>::<span class="ident">Debug</span> <span class="kw">for</span> <span class="ident">TestAlloc</span><span class="op">&lt;</span><span class="ident">A</span><span class="op">&gt;</span>
+<span class="kw">where</span>
+    <span class="ident">A</span>: <span class="ident">GlobalAlloc</span> <span class="op">+</span> <span class="ident">fmt</span>::<span class="ident">Debug</span>,
+{
+    <span class="kw">fn</span> <span class="ident">fmt</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">f</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">fmt</span>::<span class="ident">Formatter</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span>) <span class="op">-&gt;</span> <span class="ident">fmt</span>::<span class="prelude-ty">Result</span> {
+        <span class="ident">f</span>.<span class="ident">debug_struct</span>(<span class="string">&quot;TestAlloc&quot;</span>)
+            .<span class="ident">field</span>(<span class="string">&quot;alloc&quot;</span>, <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">alloc</span>)
+            .<span class="ident">field</span>(<span class="string">&quot;info&quot;</span>, <span class="kw-2">&amp;</span><span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;{:p}&quot;</span>, <span class="self">self</span>.<span class="ident">allocatings</span>))
+            .<span class="ident">finish</span>()
+    }
+}
+
 <span class="comment">// `Send` is not implemented automatically because the key type of the `allocating` (*mut u8)</span>
 <span class="comment">// does not implement `Send` . However, it is used as an integer and never to be dereferenced.</span>
 <span class="comment">// It is safe to implement `Send` manually.</span>
@@ -446,7 +473,7 @@
 
 <span class="doccomment">/// `NeverAlloc` is an implementation for `GlobalAlloc` , which always fails.</span>
 <span class="doccomment">/// For example, `NeverAlloc::alloc` always returns a null pointer.</span>
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Clone</span>, <span class="ident">Copy</span>)]</span>
+<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Clone</span>, <span class="ident">Copy</span>, <span class="ident">Debug</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">NeverAlloc</span>;
 
 <span class="kw">impl</span> <span class="ident">Default</span> <span class="kw">for</span> <span class="ident">NeverAlloc</span> {
@@ -471,6 +498,7 @@
 <span class="doccomment">/// memory on purpose. i.e. `MaybeAlloc::alloc` can return null pointer before memory exhaustion.</span>
 <span class="doccomment">///</span>
 <span class="doccomment">/// The failure properbility is 1/16.</span>
+<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">MaybeAlloc</span><span class="op">&lt;</span><span class="ident">A</span> <span class="op">=</span> <span class="ident">TestAlloc</span><span class="op">&lt;</span><span class="ident">System</span><span class="op">&gt;&gt;</span>
 <span class="kw">where</span>
     <span class="ident">A</span>: <span class="ident">GlobalAlloc</span>,
