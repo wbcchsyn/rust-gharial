@@ -81,17 +81,16 @@ pub type GBox<T> = TestBox<T, GAlloc>;
 
 /// `TestBox` behaves like `std::boxed::Box` except for it owns a reference to a `GlobalAlloc` .
 ///
-/// The default type of the `GlobalAlloc` reference is &[`TestAlloc`] .
-/// Unlike to `std::boxed::Box` , it cause an assertion error when the `GlobalAlloc` is dropped
-/// unless `TestBox` is surely dropped.
+/// If template parameter `A` is [`GAlloc`] , it causes assertion error if the instance is not
+/// dropped or dropped twice.
+///
+/// See also [`GBox`] , which is an alias to `TestBox<T, GAlloc>` .
 ///
 /// For example, it sometimes requires to allocate heap memory to implement container struct,
-/// and then the elements must be dropped manually. `TestBox` helps the test to make sure the elements
-/// are dropped.
+/// and then the elements must be dropped manually. This struct helps the test.
 ///
-/// [`TestAlloc`]: struct.TestAlloc.html
 #[derive(Debug)]
-pub struct TestBox<T, A = GAlloc>
+pub struct TestBox<T, A>
 where
     A: GlobalAlloc,
 {
@@ -275,7 +274,7 @@ where
     ///
     /// let alloc = GAlloc::default();
     ///
-    /// let five: TestBox<i32> = TestBox::new(5, alloc.clone());
+    /// let five = TestBox::new(5, alloc.clone());
     /// let leaked = TestBox::leak(five);
     /// assert_eq!(5, *leaked);
     ///
@@ -300,7 +299,7 @@ where
     ///
     /// let alloc = GAlloc::default();
     ///
-    /// let five: TestBox<i32> = TestBox::new(5, alloc.clone());
+    /// let five = TestBox::new(5, alloc.clone());
     /// let raw = TestBox::into_raw(five);
     /// assert_eq!(5, unsafe { *raw });
     ///
