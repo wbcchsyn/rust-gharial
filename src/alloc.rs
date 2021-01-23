@@ -93,7 +93,9 @@ pub type GAlloc = TestAlloc<System>;
 /// - All allocated memories have already been deallocated on the drop.
 ///   (Note that cloned instances share the allocating memory information. The check is done when the
 ///   last cloned instance is dropped.)
-pub struct TestAlloc<A = System>
+///
+/// See also [`GAlloc`] . It is an alias to `TestAlloc<std::alloc::System>` .
+pub struct TestAlloc<A>
 where
     A: GlobalAlloc,
 {
