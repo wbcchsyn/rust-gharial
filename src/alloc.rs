@@ -75,6 +75,10 @@ use std::collections::hash_map::HashMap;
 use std::fmt;
 use std::sync::{Arc, Mutex};
 
+/// Alias to `TestAlloc<System>` .
+/// 'GAlloc' stands for `Gharial Alloc`
+pub type GAlloc = TestAlloc<System>;
+
 /// `TestAlloc` is a implementation for `GlobalAlloc` to test memory leak and so on.
 ///
 /// It is a wrapper of another `GlobalAlloc` , and delegates the requests to the inner after testing.
@@ -89,7 +93,9 @@ use std::sync::{Arc, Mutex};
 /// - All allocated memories have already been deallocated on the drop.
 ///   (Note that cloned instances share the allocating memory information. The check is done when the
 ///   last cloned instance is dropped.)
-pub struct TestAlloc<A = System>
+///
+/// See also [`GAlloc`] . It is an alias to `TestAlloc<std::alloc::System>` .
+pub struct TestAlloc<A>
 where
     A: GlobalAlloc,
 {

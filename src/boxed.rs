@@ -67,7 +67,7 @@
 // DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-use crate::TestAlloc;
+use crate::GAlloc;
 use core::alloc::{GlobalAlloc, Layout};
 use core::cmp::Ordering;
 use core::ops::{Deref, DerefMut};
@@ -75,19 +75,22 @@ use std::alloc::handle_alloc_error;
 use std::borrow::{Borrow, BorrowMut};
 use std::hash::{Hash, Hasher};
 
+/// Alias to `TestBox<T, GAlloc>`
+/// 'GBox' stands for 'Gharial Box'.
+pub type GBox<T> = TestBox<T, GAlloc>;
+
 /// `TestBox` behaves like `std::boxed::Box` except for it owns a reference to a `GlobalAlloc` .
 ///
-/// The default type of the `GlobalAlloc` reference is &[`TestAlloc`] .
-/// Unlike to `std::boxed::Box` , it cause an assertion error when the `GlobalAlloc` is dropped
-/// unless `TestBox` is surely dropped.
+/// If template parameter `A` is [`GAlloc`] , it causes assertion error if the instance is not
+/// dropped or dropped twice.
+///
+/// See also [`GBox`] , which is an alias to `TestBox<T, GAlloc>` .
 ///
 /// For example, it sometimes requires to allocate heap memory to implement container struct,
-/// and then the elements must be dropped manually. `TestBox` helps the test to make sure the elements
-/// are dropped.
+/// and then the elements must be dropped manually. This struct helps the test.
 ///
-/// [`TestAlloc`]: struct.TestAlloc.html
 #[derive(Debug)]
-pub struct TestBox<T, A = TestAlloc>
+pub struct TestBox<T, A>
 where
     A: GlobalAlloc,
 {
@@ -123,10 +126,9 @@ where
     /// # Examples
     ///
     /// ```
-    /// use gharial::{TestAlloc, TestBox};
-    /// use std::alloc::System;
+    /// use gharial::{GAlloc, TestBox};
     ///
-    /// let alloc = TestAlloc::from(System);
+    /// let alloc = GAlloc::default();
     /// let _box = TestBox::new(5, alloc);
     /// ```
     pub fn new(x: T, alloc: A) -> Self {
@@ -153,10 +155,10 @@ where
     /// # Examples
     ///
     /// ```
-    /// use gharial::{TestAlloc, TestBox};
-    /// use std::alloc::{handle_alloc_error, GlobalAlloc, Layout, System};
+    /// use gharial::{GAlloc, TestBox};
+    /// use std::alloc::{handle_alloc_error, GlobalAlloc, Layout};
     ///
-    /// let alloc = TestAlloc::from(System);
+    /// let alloc = GAlloc::default();
     /// let ptr = unsafe {
     ///     let layout = Layout::new::<i32>();
     ///     let ptr = alloc.alloc(layout) as *mut i32;
@@ -268,11 +270,11 @@ where
     /// # Examples
     ///
     /// ```
-    /// use gharial::{TestAlloc, TestBox};
+    /// use gharial::{GAlloc, TestBox};
     ///
-    /// let alloc = TestAlloc::default();
+    /// let alloc = GAlloc::default();
     ///
-    /// let five: TestBox<i32> = TestBox::new(5, alloc.clone());
+    /// let five = TestBox::new(5, alloc.clone());
     /// let leaked = TestBox::leak(five);
     /// assert_eq!(5, *leaked);
     ///
@@ -293,11 +295,11 @@ where
     /// # Examples
     ///
     /// ```
-    /// use gharial::{TestAlloc, TestBox};
+    /// use gharial::{GAlloc, TestBox};
     ///
-    /// let alloc = TestAlloc::default();
+    /// let alloc = GAlloc::default();
     ///
-    /// let five: TestBox<i32> = TestBox::new(5, alloc.clone());
+    /// let five = TestBox::new(5, alloc.clone());
     /// let raw = TestBox::into_raw(five);
     /// assert_eq!(5, unsafe { *raw });
     ///
@@ -368,19 +370,18 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::alloc::System;
 
     #[test]
     fn constructor() {
-        let _tb = TestBox::new(35, TestAlloc::<System>::default());
+        let _tb = GBox::from(35);
     }
 
     #[test]
     fn leak() {
-        let alloc = TestAlloc::<System>::default();
-        let tb = TestBox::new("foo".to_string(), alloc.clone());
+        let alloc = GAlloc::default();
+        let tb = GBox::new("foo".to_string(), alloc.clone());
 
-        let s = TestBox::leak(tb);
+        let s = GBox::leak(tb);
         let ptr = s as *mut String;
 
         let layout = Layout::new::<String>();
@@ -393,19 +394,19 @@ mod tests {
     #[test]
     #[should_panic]
     fn leak_without_free() {
-        let tb = TestBox::new("foo".to_string(), TestAlloc::<System>::default());
+        let tb = GBox::from("foo".to_string());
 
-        let s = TestBox::leak(tb);
+        let s = GBox::leak(tb);
         let ptr = s as *mut String;
         unsafe { ptr.drop_in_place() };
     }
 
     #[test]
     fn into_raw() {
-        let alloc = TestAlloc::<System>::default();
-        let tb = TestBox::new("foo".to_string(), alloc.clone());
+        let alloc = GAlloc::default();
+        let tb = GBox::new("foo".to_string(), alloc.clone());
 
-        let ptr = TestBox::into_raw(tb);
+        let ptr = GBox::into_raw(tb);
 
         let layout = Layout::new::<String>();
         unsafe {
@@ -417,15 +418,15 @@ mod tests {
     #[test]
     #[should_panic]
     fn into_raw_without_free() {
-        let tb = TestBox::new("foo".to_string(), TestAlloc::<System>::default());
+        let tb = GBox::from("foo".to_string());
 
-        let ptr = TestBox::into_raw(tb);
+        let ptr = GBox::into_raw(tb);
         unsafe { ptr.drop_in_place() };
     }
 
     #[test]
     fn clone() {
-        let tb = TestBox::new(35, TestAlloc::<System>::default());
+        let tb = GBox::from(35);
         let _cloned = tb.clone();
     }
 }
