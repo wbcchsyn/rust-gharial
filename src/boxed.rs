@@ -67,7 +67,7 @@
 // DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-use crate::{TestAlloc, GAlloc};
+use crate::GAlloc;
 use core::alloc::{GlobalAlloc, Layout};
 use core::cmp::Ordering;
 use core::ops::{Deref, DerefMut};
@@ -91,7 +91,7 @@ pub type GBox<T> = TestBox<T, GAlloc>;
 ///
 /// [`TestAlloc`]: struct.TestAlloc.html
 #[derive(Debug)]
-pub struct TestBox<T, A = TestAlloc>
+pub struct TestBox<T, A = GAlloc>
 where
     A: GlobalAlloc,
 {
@@ -372,19 +372,18 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::alloc::System;
 
     #[test]
     fn constructor() {
-        let _tb = TestBox::new(35, TestAlloc::<System>::default());
+        let _tb = GBox::from(35);
     }
 
     #[test]
     fn leak() {
-        let alloc = TestAlloc::<System>::default();
-        let tb = TestBox::new("foo".to_string(), alloc.clone());
+        let alloc = GAlloc::default();
+        let tb = GBox::new("foo".to_string(), alloc.clone());
 
-        let s = TestBox::leak(tb);
+        let s = GBox::leak(tb);
         let ptr = s as *mut String;
 
         let layout = Layout::new::<String>();
@@ -397,19 +396,19 @@ mod tests {
     #[test]
     #[should_panic]
     fn leak_without_free() {
-        let tb = TestBox::new("foo".to_string(), TestAlloc::<System>::default());
+        let tb = GBox::from("foo".to_string());
 
-        let s = TestBox::leak(tb);
+        let s = GBox::leak(tb);
         let ptr = s as *mut String;
         unsafe { ptr.drop_in_place() };
     }
 
     #[test]
     fn into_raw() {
-        let alloc = TestAlloc::<System>::default();
-        let tb = TestBox::new("foo".to_string(), alloc.clone());
+        let alloc = GAlloc::default();
+        let tb = GBox::new("foo".to_string(), alloc.clone());
 
-        let ptr = TestBox::into_raw(tb);
+        let ptr = GBox::into_raw(tb);
 
         let layout = Layout::new::<String>();
         unsafe {
@@ -421,15 +420,15 @@ mod tests {
     #[test]
     #[should_panic]
     fn into_raw_without_free() {
-        let tb = TestBox::new("foo".to_string(), TestAlloc::<System>::default());
+        let tb = GBox::from("foo".to_string());
 
-        let ptr = TestBox::into_raw(tb);
+        let ptr = GBox::into_raw(tb);
         unsafe { ptr.drop_in_place() };
     }
 
     #[test]
     fn clone() {
-        let tb = TestBox::new(35, TestAlloc::<System>::default());
+        let tb = GBox::from(35);
         let _cloned = tb.clone();
     }
 }
