@@ -85,4 +85,4 @@ mod alloc;
 mod boxed;
 
 pub use alloc::{GAlloc, MaybeAlloc, NeverAlloc, TestAlloc};
-pub use boxed::TestBox;
+pub use boxed::{GBox, TestBox};

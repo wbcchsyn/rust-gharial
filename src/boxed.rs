@@ -67,13 +67,17 @@
 // DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-use crate::TestAlloc;
+use crate::{TestAlloc, GAlloc};
 use core::alloc::{GlobalAlloc, Layout};
 use core::cmp::Ordering;
 use core::ops::{Deref, DerefMut};
 use std::alloc::handle_alloc_error;
 use std::borrow::{Borrow, BorrowMut};
 use std::hash::{Hash, Hasher};
+
+/// Alias to `TestBox<T, GAlloc>`
+/// 'GBox' stands for 'Gharial Box'.
+pub type GBox<T> = TestBox<T, GAlloc>;
 
 /// `TestBox` behaves like `std::boxed::Box` except for it owns a reference to a `GlobalAlloc` .
 ///
