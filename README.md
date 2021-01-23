@@ -1,4 +1,4 @@
-# Gharial
+# gharial
 
 `Gharial` is a test tool for program to manipulate memory directly.
 
@@ -12,7 +12,4 @@ some trouble like memory leak could be occurred.
 
 `Gharial` helps to test such program.
 
-[lgpl-badge]: https://img.shields.io/badge/license-lgpl-blue.svg
-[apache2-badge]: https://img.shields.io/badge/license-apache2-blue.svg
-[mit-badge]: https://img.shields.io/badge/license-mit-blue.svg
-[bsd2-badge]: https://img.shields.io/badge/license-bsd2-blue.svg
+License: LGPL-3.0-or-later OR Apache-2.0 OR BSD-2-Clause OR MIT

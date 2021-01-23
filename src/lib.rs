@@ -69,8 +69,6 @@
 
 #![deny(missing_docs)]
 
-//! # Gharial
-//!
 //! `Gharial` is a test tool for program to manipulate memory directly.
 //!
 //! Rust usually follows the rule of RAII (Resource Acquisition is Initialization;)
