@@ -95,6 +95,16 @@ where
     alloc: A,
 }
 
+impl<T, A> Default for TestBox<T, A>
+where
+    T: Default,
+    A: Default + GlobalAlloc,
+{
+    fn default() -> Self {
+        Self::new(T::default(), A::default())
+    }
+}
+
 impl<T, A> TestBox<T, A>
 where
     A: GlobalAlloc,
