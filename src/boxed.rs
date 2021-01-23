@@ -87,20 +87,20 @@ use std::hash::{Hash, Hasher};
 ///
 /// [`TestAlloc`]: struct.TestAlloc.html
 #[derive(Debug)]
-pub struct TestBox<'a, T, A = TestAlloc>
+pub struct TestBox<T, A = TestAlloc>
 where
     A: GlobalAlloc,
 {
     ptr: *mut T,
-    alloc: &'a A,
+    alloc: A,
 }
 
-impl<'a, T, A> TestBox<'a, T, A>
+impl<T, A> TestBox<T, A>
 where
     A: GlobalAlloc,
 {
     /// Creates a new instance.
-    pub fn new(x: T, alloc: &'a A) -> Self {
+    pub fn new(x: T, alloc: A) -> Self {
         let layout = Layout::new::<T>();
         let ptr = unsafe { alloc.alloc(layout) as *mut T };
         if ptr.is_null() {
@@ -120,22 +120,22 @@ where
     ///
     /// To use this function safe, the ptr should be allocated via `alloc` and it should not be
     /// freed anywhere else.
-    pub unsafe fn from_raw_alloc(ptr: *mut T, alloc: &'a A) -> Self {
+    pub unsafe fn from_raw_alloc(ptr: *mut T, alloc: A) -> Self {
         Self { ptr, alloc }
     }
 }
 
-impl<T, A> Clone for TestBox<'_, T, A>
+impl<T, A> Clone for TestBox<T, A>
 where
     T: Clone,
-    A: GlobalAlloc,
+    A: Clone + GlobalAlloc,
 {
     fn clone(&self) -> Self {
-        Self::new(self.as_ref().clone(), self.alloc)
+        Self::new(self.as_ref().clone(), self.alloc.clone())
     }
 }
 
-impl<T, A> Drop for TestBox<'_, T, A>
+impl<T, A> Drop for TestBox<T, A>
 where
     A: GlobalAlloc,
 {
@@ -152,7 +152,7 @@ where
     }
 }
 
-impl<T, A> PartialEq<Self> for TestBox<'_, T, A>
+impl<T, A> PartialEq<Self> for TestBox<T, A>
 where
     T: PartialEq,
     A: GlobalAlloc,
@@ -164,14 +164,14 @@ where
     }
 }
 
-impl<T, A> Eq for TestBox<'_, T, A>
+impl<T, A> Eq for TestBox<T, A>
 where
     T: Eq,
     A: GlobalAlloc,
 {
 }
 
-impl<T, A> PartialOrd<Self> for TestBox<'_, T, A>
+impl<T, A> PartialOrd<Self> for TestBox<T, A>
 where
     T: PartialOrd,
     A: GlobalAlloc,
@@ -183,7 +183,7 @@ where
     }
 }
 
-impl<T, A> Ord for TestBox<'_, T, A>
+impl<T, A> Ord for TestBox<T, A>
 where
     T: Ord,
     A: GlobalAlloc,
@@ -195,7 +195,7 @@ where
     }
 }
 
-impl<T, A> Hash for TestBox<'_, T, A>
+impl<T, A> Hash for TestBox<T, A>
 where
     T: Hash,
     A: GlobalAlloc,
@@ -209,12 +209,12 @@ where
     }
 }
 
-impl<'a, T, A> TestBox<'a, T, A>
+impl<T, A> TestBox<T, A>
 where
     A: GlobalAlloc,
 {
     /// Consumes and leaks `TestBox` .
-    pub fn leak(mut tb: Self) -> &'a mut T
+    pub fn leak<'a>(mut tb: Self) -> &'a mut T
     where
         T: 'a,
     {
@@ -232,7 +232,7 @@ where
     }
 }
 
-impl<T, A> AsRef<T> for TestBox<'_, T, A>
+impl<T, A> AsRef<T> for TestBox<T, A>
 where
     A: GlobalAlloc,
 {
@@ -241,7 +241,7 @@ where
     }
 }
 
-impl<T, A> AsMut<T> for TestBox<'_, T, A>
+impl<T, A> AsMut<T> for TestBox<T, A>
 where
     A: GlobalAlloc,
 {
@@ -250,7 +250,7 @@ where
     }
 }
 
-impl<T, A> Borrow<T> for TestBox<'_, T, A>
+impl<T, A> Borrow<T> for TestBox<T, A>
 where
     A: GlobalAlloc,
 {
@@ -259,7 +259,7 @@ where
     }
 }
 
-impl<T, A> BorrowMut<T> for TestBox<'_, T, A>
+impl<T, A> BorrowMut<T> for TestBox<T, A>
 where
     A: GlobalAlloc,
 {
@@ -268,7 +268,7 @@ where
     }
 }
 
-impl<T, A> Deref for TestBox<'_, T, A>
+impl<T, A> Deref for TestBox<T, A>
 where
     A: GlobalAlloc,
 {
@@ -278,7 +278,7 @@ where
     }
 }
 
-impl<T, A> DerefMut for TestBox<'_, T, A>
+impl<T, A> DerefMut for TestBox<T, A>
 where
     A: GlobalAlloc,
 {
@@ -294,14 +294,13 @@ mod tests {
 
     #[test]
     fn constructor() {
-        let alloc = TestAlloc::<System>::default();
-        let _tb = TestBox::new(35, &alloc);
+        let _tb = TestBox::new(35, TestAlloc::<System>::default());
     }
 
     #[test]
     fn leak() {
         let alloc = TestAlloc::<System>::default();
-        let tb = TestBox::new("foo".to_string(), &alloc);
+        let tb = TestBox::new("foo".to_string(), alloc.clone());
 
         let s = TestBox::leak(tb);
         let ptr = s as *mut String;
@@ -316,8 +315,7 @@ mod tests {
     #[test]
     #[should_panic]
     fn leak_without_free() {
-        let alloc = TestAlloc::<System>::default();
-        let tb = TestBox::new("foo".to_string(), &alloc);
+        let tb = TestBox::new("foo".to_string(), TestAlloc::<System>::default());
 
         let s = TestBox::leak(tb);
         let ptr = s as *mut String;
@@ -327,7 +325,7 @@ mod tests {
     #[test]
     fn into_raw() {
         let alloc = TestAlloc::<System>::default();
-        let tb = TestBox::new("foo".to_string(), &alloc);
+        let tb = TestBox::new("foo".to_string(), alloc.clone());
 
         let ptr = TestBox::into_raw(tb);
 
@@ -341,8 +339,7 @@ mod tests {
     #[test]
     #[should_panic]
     fn into_raw_without_free() {
-        let alloc = TestAlloc::<System>::default();
-        let tb = TestBox::new("foo".to_string(), &alloc);
+        let tb = TestBox::new("foo".to_string(), TestAlloc::<System>::default());
 
         let ptr = TestBox::into_raw(tb);
         unsafe { ptr.drop_in_place() };
@@ -350,8 +347,7 @@ mod tests {
 
     #[test]
     fn clone() {
-        let alloc = TestAlloc::<System>::default();
-        let tb = TestBox::new(35, &alloc);
+        let tb = TestBox::new(35, TestAlloc::<System>::default());
         let _cloned = tb.clone();
     }
 }
