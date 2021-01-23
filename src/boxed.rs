@@ -119,6 +119,16 @@ where
     A: GlobalAlloc,
 {
     /// Creates a new instance.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use gharial::{TestAlloc, TestBox};
+    /// use std::alloc::System;
+    ///
+    /// let alloc = TestAlloc::from(System);
+    /// let _box = TestBox::new(5, alloc);
+    /// ```
     pub fn new(x: T, alloc: A) -> Self {
         let layout = Layout::new::<T>();
         let ptr = unsafe { alloc.alloc(layout) as *mut T };
@@ -139,6 +149,27 @@ where
     ///
     /// To use this function safe, the ptr should be allocated via `alloc` and it should not be
     /// freed anywhere else.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use gharial::{TestAlloc, TestBox};
+    /// use std::alloc::{handle_alloc_error, GlobalAlloc, Layout, System};
+    ///
+    /// let alloc = TestAlloc::from(System);
+    /// let ptr = unsafe {
+    ///     let layout = Layout::new::<i32>();
+    ///     let ptr = alloc.alloc(layout) as *mut i32;
+    ///     if ptr.is_null() {
+    ///         handle_alloc_error(layout);
+    ///     }
+    ///
+    ///     *ptr = 5;
+    ///     ptr
+    /// };
+    ///
+    /// let _box = unsafe { TestBox::from_raw_alloc(ptr, alloc) };
+    /// ```
     pub unsafe fn from_raw_alloc(ptr: *mut T, alloc: A) -> Self {
         Self { ptr, alloc }
     }
@@ -233,6 +264,20 @@ where
     A: GlobalAlloc,
 {
     /// Consumes and leaks `TestBox` .
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use gharial::{TestAlloc, TestBox};
+    ///
+    /// let alloc = TestAlloc::default();
+    ///
+    /// let five: TestBox<i32> = TestBox::new(5, alloc.clone());
+    /// let leaked = TestBox::leak(five);
+    /// assert_eq!(5, *leaked);
+    ///
+    /// let five_ = unsafe { TestBox::from_raw_alloc(leaked, alloc) };
+    /// ```
     pub fn leak<'a>(mut tb: Self) -> &'a mut T
     where
         T: 'a,
@@ -244,6 +289,20 @@ where
     }
 
     /// Consumes the `TestBox` and returning a wrapped raw pointer.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use gharial::{TestAlloc, TestBox};
+    ///
+    /// let alloc = TestAlloc::default();
+    ///
+    /// let five: TestBox<i32> = TestBox::new(5, alloc.clone());
+    /// let raw = TestBox::into_raw(five);
+    /// assert_eq!(5, unsafe { *raw });
+    ///
+    /// let five_ = unsafe { TestBox::from_raw_alloc(raw, alloc) };
+    /// ```
     pub fn into_raw(mut tb: Self) -> *mut T {
         let ptr = tb.ptr;
         tb.ptr = core::ptr::null_mut();
