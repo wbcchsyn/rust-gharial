@@ -105,6 +105,15 @@ where
     }
 }
 
+impl<T, A> From<T> for TestBox<T, A>
+where
+    A: Default + GlobalAlloc,
+{
+    fn from(val: T) -> Self {
+        Self::new(val, A::default())
+    }
+}
+
 impl<T, A> TestBox<T, A>
 where
     A: GlobalAlloc,
