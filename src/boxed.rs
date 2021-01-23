@@ -127,10 +127,9 @@ where
     /// # Examples
     ///
     /// ```
-    /// use gharial::{TestAlloc, TestBox};
-    /// use std::alloc::System;
+    /// use gharial::{GAlloc, TestBox};
     ///
-    /// let alloc = TestAlloc::from(System);
+    /// let alloc = GAlloc::default();
     /// let _box = TestBox::new(5, alloc);
     /// ```
     pub fn new(x: T, alloc: A) -> Self {
@@ -157,10 +156,10 @@ where
     /// # Examples
     ///
     /// ```
-    /// use gharial::{TestAlloc, TestBox};
-    /// use std::alloc::{handle_alloc_error, GlobalAlloc, Layout, System};
+    /// use gharial::{GAlloc, TestBox};
+    /// use std::alloc::{handle_alloc_error, GlobalAlloc, Layout};
     ///
-    /// let alloc = TestAlloc::from(System);
+    /// let alloc = GAlloc::default();
     /// let ptr = unsafe {
     ///     let layout = Layout::new::<i32>();
     ///     let ptr = alloc.alloc(layout) as *mut i32;
@@ -272,9 +271,9 @@ where
     /// # Examples
     ///
     /// ```
-    /// use gharial::{TestAlloc, TestBox};
+    /// use gharial::{GAlloc, TestBox};
     ///
-    /// let alloc = TestAlloc::default();
+    /// let alloc = GAlloc::default();
     ///
     /// let five: TestBox<i32> = TestBox::new(5, alloc.clone());
     /// let leaked = TestBox::leak(five);
@@ -297,9 +296,9 @@ where
     /// # Examples
     ///
     /// ```
-    /// use gharial::{TestAlloc, TestBox};
+    /// use gharial::{GAlloc, TestBox};
     ///
-    /// let alloc = TestAlloc::default();
+    /// let alloc = GAlloc::default();
     ///
     /// let five: TestBox<i32> = TestBox::new(5, alloc.clone());
     /// let raw = TestBox::into_raw(five);
