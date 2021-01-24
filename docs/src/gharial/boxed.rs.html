@@ -432,6 +432,7 @@
 <span id="429">429</span>
 <span id="430">430</span>
 <span id="431">431</span>
+<span id="432">432</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright 2020 Shin Yoshida</span>
 <span class="comment">//</span>
@@ -502,7 +503,7 @@
 <span class="comment">// DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,</span>
 <span class="comment">// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.</span>
 
-<span class="kw">use</span> <span class="kw">crate</span>::<span class="ident">TestAlloc</span>;
+<span class="kw">use</span> <span class="kw">crate</span>::<span class="ident">GAlloc</span>;
 <span class="kw">use</span> <span class="ident">core</span>::<span class="ident">alloc</span>::{<span class="ident">GlobalAlloc</span>, <span class="ident">Layout</span>};
 <span class="kw">use</span> <span class="ident">core</span>::<span class="ident">cmp</span>::<span class="ident">Ordering</span>;
 <span class="kw">use</span> <span class="ident">core</span>::<span class="ident">ops</span>::{<span class="ident">Deref</span>, <span class="ident">DerefMut</span>};
@@ -510,19 +511,22 @@
 <span class="kw">use</span> <span class="ident">std</span>::<span class="ident">borrow</span>::{<span class="ident">Borrow</span>, <span class="ident">BorrowMut</span>};
 <span class="kw">use</span> <span class="ident">std</span>::<span class="ident">hash</span>::{<span class="ident">Hash</span>, <span class="ident">Hasher</span>};
 
+<span class="doccomment">/// Alias to `TestBox&lt;T, GAlloc&gt;`</span>
+<span class="doccomment">/// &#39;GBox&#39; stands for &#39;Gharial Box&#39;.</span>
+<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">GBox</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">TestBox</span><span class="op">&lt;</span><span class="ident">T</span>, <span class="ident">GAlloc</span><span class="op">&gt;</span>;
+
 <span class="doccomment">/// `TestBox` behaves like `std::boxed::Box` except for it owns a reference to a `GlobalAlloc` .</span>
 <span class="doccomment">///</span>
-<span class="doccomment">/// The default type of the `GlobalAlloc` reference is &amp;[`TestAlloc`] .</span>
-<span class="doccomment">/// Unlike to `std::boxed::Box` , it cause an assertion error when the `GlobalAlloc` is dropped</span>
-<span class="doccomment">/// unless `TestBox` is surely dropped.</span>
+<span class="doccomment">/// If template parameter `A` is [`GAlloc`] , it causes assertion error if the instance is not</span>
+<span class="doccomment">/// dropped or dropped twice.</span>
+<span class="doccomment">///</span>
+<span class="doccomment">/// See also [`GBox`] , which is an alias to `TestBox&lt;T, GAlloc&gt;` .</span>
 <span class="doccomment">///</span>
 <span class="doccomment">/// For example, it sometimes requires to allocate heap memory to implement container struct,</span>
-<span class="doccomment">/// and then the elements must be dropped manually. `TestBox` helps the test to make sure the elements</span>
-<span class="doccomment">/// are dropped.</span>
+<span class="doccomment">/// and then the elements must be dropped manually. This struct helps the test.</span>
 <span class="doccomment">///</span>
-<span class="doccomment">/// [`TestAlloc`]: struct.TestAlloc.html</span>
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>)]</span>
-<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">TestBox</span><span class="op">&lt;</span><span class="ident">T</span>, <span class="ident">A</span> <span class="op">=</span> <span class="ident">TestAlloc</span><span class="op">&gt;</span>
+<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">TestBox</span><span class="op">&lt;</span><span class="ident">T</span>, <span class="ident">A</span><span class="op">&gt;</span>
 <span class="kw">where</span>
     <span class="ident">A</span>: <span class="ident">GlobalAlloc</span>,
 {
@@ -558,10 +562,9 @@
     <span class="doccomment">/// # Examples</span>
     <span class="doccomment">///</span>
     <span class="doccomment">/// ```</span>
-    <span class="doccomment">/// use gharial::{TestAlloc, TestBox};</span>
-    <span class="doccomment">/// use std::alloc::System;</span>
+    <span class="doccomment">/// use gharial::{GAlloc, TestBox};</span>
     <span class="doccomment">///</span>
-    <span class="doccomment">/// let alloc = TestAlloc::from(System);</span>
+    <span class="doccomment">/// let alloc = GAlloc::default();</span>
     <span class="doccomment">/// let _box = TestBox::new(5, alloc);</span>
     <span class="doccomment">/// ```</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">x</span>: <span class="ident">T</span>, <span class="ident">alloc</span>: <span class="ident">A</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
@@ -588,10 +591,10 @@
     <span class="doccomment">/// # Examples</span>
     <span class="doccomment">///</span>
     <span class="doccomment">/// ```</span>
-    <span class="doccomment">/// use gharial::{TestAlloc, TestBox};</span>
-    <span class="doccomment">/// use std::alloc::{handle_alloc_error, GlobalAlloc, Layout, System};</span>
+    <span class="doccomment">/// use gharial::{GAlloc, TestBox};</span>
+    <span class="doccomment">/// use std::alloc::{handle_alloc_error, GlobalAlloc, Layout};</span>
     <span class="doccomment">///</span>
-    <span class="doccomment">/// let alloc = TestAlloc::from(System);</span>
+    <span class="doccomment">/// let alloc = GAlloc::default();</span>
     <span class="doccomment">/// let ptr = unsafe {</span>
     <span class="doccomment">///     let layout = Layout::new::&lt;i32&gt;();</span>
     <span class="doccomment">///     let ptr = alloc.alloc(layout) as *mut i32;</span>
@@ -703,11 +706,11 @@
     <span class="doccomment">/// # Examples</span>
     <span class="doccomment">///</span>
     <span class="doccomment">/// ```</span>
-    <span class="doccomment">/// use gharial::{TestAlloc, TestBox};</span>
+    <span class="doccomment">/// use gharial::{GAlloc, TestBox};</span>
     <span class="doccomment">///</span>
-    <span class="doccomment">/// let alloc = TestAlloc::default();</span>
+    <span class="doccomment">/// let alloc = GAlloc::default();</span>
     <span class="doccomment">///</span>
-    <span class="doccomment">/// let five: TestBox&lt;i32&gt; = TestBox::new(5, alloc.clone());</span>
+    <span class="doccomment">/// let five = TestBox::new(5, alloc.clone());</span>
     <span class="doccomment">/// let leaked = TestBox::leak(five);</span>
     <span class="doccomment">/// assert_eq!(5, *leaked);</span>
     <span class="doccomment">///</span>
@@ -728,11 +731,11 @@
     <span class="doccomment">/// # Examples</span>
     <span class="doccomment">///</span>
     <span class="doccomment">/// ```</span>
-    <span class="doccomment">/// use gharial::{TestAlloc, TestBox};</span>
+    <span class="doccomment">/// use gharial::{GAlloc, TestBox};</span>
     <span class="doccomment">///</span>
-    <span class="doccomment">/// let alloc = TestAlloc::default();</span>
+    <span class="doccomment">/// let alloc = GAlloc::default();</span>
     <span class="doccomment">///</span>
-    <span class="doccomment">/// let five: TestBox&lt;i32&gt; = TestBox::new(5, alloc.clone());</span>
+    <span class="doccomment">/// let five = TestBox::new(5, alloc.clone());</span>
     <span class="doccomment">/// let raw = TestBox::into_raw(five);</span>
     <span class="doccomment">/// assert_eq!(5, unsafe { *raw });</span>
     <span class="doccomment">///</span>
@@ -803,19 +806,18 @@
 <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">test</span>)]</span>
 <span class="kw">mod</span> <span class="ident">tests</span> {
     <span class="kw">use</span> <span class="kw">super</span>::<span class="kw-2">*</span>;
-    <span class="kw">use</span> <span class="ident">std</span>::<span class="ident">alloc</span>::<span class="ident">System</span>;
 
     <span class="attribute">#[<span class="ident">test</span>]</span>
     <span class="kw">fn</span> <span class="ident">constructor</span>() {
-        <span class="kw">let</span> <span class="ident">_tb</span> <span class="op">=</span> <span class="ident">TestBox</span>::<span class="ident">new</span>(<span class="number">35</span>, <span class="ident">TestAlloc</span>::<span class="op">&lt;</span><span class="ident">System</span><span class="op">&gt;</span>::<span class="ident">default</span>());
+        <span class="kw">let</span> <span class="ident">_tb</span> <span class="op">=</span> <span class="ident">GBox</span>::<span class="ident">from</span>(<span class="number">35</span>);
     }
 
     <span class="attribute">#[<span class="ident">test</span>]</span>
     <span class="kw">fn</span> <span class="ident">leak</span>() {
-        <span class="kw">let</span> <span class="ident">alloc</span> <span class="op">=</span> <span class="ident">TestAlloc</span>::<span class="op">&lt;</span><span class="ident">System</span><span class="op">&gt;</span>::<span class="ident">default</span>();
-        <span class="kw">let</span> <span class="ident">tb</span> <span class="op">=</span> <span class="ident">TestBox</span>::<span class="ident">new</span>(<span class="string">&quot;foo&quot;</span>.<span class="ident">to_string</span>(), <span class="ident">alloc</span>.<span class="ident">clone</span>());
+        <span class="kw">let</span> <span class="ident">alloc</span> <span class="op">=</span> <span class="ident">GAlloc</span>::<span class="ident">default</span>();
+        <span class="kw">let</span> <span class="ident">tb</span> <span class="op">=</span> <span class="ident">GBox</span>::<span class="ident">new</span>(<span class="string">&quot;foo&quot;</span>.<span class="ident">to_string</span>(), <span class="ident">alloc</span>.<span class="ident">clone</span>());
 
-        <span class="kw">let</span> <span class="ident">s</span> <span class="op">=</span> <span class="ident">TestBox</span>::<span class="ident">leak</span>(<span class="ident">tb</span>);
+        <span class="kw">let</span> <span class="ident">s</span> <span class="op">=</span> <span class="ident">GBox</span>::<span class="ident">leak</span>(<span class="ident">tb</span>);
         <span class="kw">let</span> <span class="ident">ptr</span> <span class="op">=</span> <span class="ident">s</span> <span class="kw">as</span> <span class="kw-2">*</span><span class="kw-2">mut</span> <span class="ident">String</span>;
 
         <span class="kw">let</span> <span class="ident">layout</span> <span class="op">=</span> <span class="ident">Layout</span>::<span class="ident">new</span>::<span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>();
@@ -828,19 +830,19 @@
     <span class="attribute">#[<span class="ident">test</span>]</span>
     <span class="attribute">#[<span class="ident">should_panic</span>]</span>
     <span class="kw">fn</span> <span class="ident">leak_without_free</span>() {
-        <span class="kw">let</span> <span class="ident">tb</span> <span class="op">=</span> <span class="ident">TestBox</span>::<span class="ident">new</span>(<span class="string">&quot;foo&quot;</span>.<span class="ident">to_string</span>(), <span class="ident">TestAlloc</span>::<span class="op">&lt;</span><span class="ident">System</span><span class="op">&gt;</span>::<span class="ident">default</span>());
+        <span class="kw">let</span> <span class="ident">tb</span> <span class="op">=</span> <span class="ident">GBox</span>::<span class="ident">from</span>(<span class="string">&quot;foo&quot;</span>.<span class="ident">to_string</span>());
 
-        <span class="kw">let</span> <span class="ident">s</span> <span class="op">=</span> <span class="ident">TestBox</span>::<span class="ident">leak</span>(<span class="ident">tb</span>);
+        <span class="kw">let</span> <span class="ident">s</span> <span class="op">=</span> <span class="ident">GBox</span>::<span class="ident">leak</span>(<span class="ident">tb</span>);
         <span class="kw">let</span> <span class="ident">ptr</span> <span class="op">=</span> <span class="ident">s</span> <span class="kw">as</span> <span class="kw-2">*</span><span class="kw-2">mut</span> <span class="ident">String</span>;
         <span class="kw">unsafe</span> { <span class="ident">ptr</span>.<span class="ident">drop_in_place</span>() };
     }
 
     <span class="attribute">#[<span class="ident">test</span>]</span>
     <span class="kw">fn</span> <span class="ident">into_raw</span>() {
-        <span class="kw">let</span> <span class="ident">alloc</span> <span class="op">=</span> <span class="ident">TestAlloc</span>::<span class="op">&lt;</span><span class="ident">System</span><span class="op">&gt;</span>::<span class="ident">default</span>();
-        <span class="kw">let</span> <span class="ident">tb</span> <span class="op">=</span> <span class="ident">TestBox</span>::<span class="ident">new</span>(<span class="string">&quot;foo&quot;</span>.<span class="ident">to_string</span>(), <span class="ident">alloc</span>.<span class="ident">clone</span>());
+        <span class="kw">let</span> <span class="ident">alloc</span> <span class="op">=</span> <span class="ident">GAlloc</span>::<span class="ident">default</span>();
+        <span class="kw">let</span> <span class="ident">tb</span> <span class="op">=</span> <span class="ident">GBox</span>::<span class="ident">new</span>(<span class="string">&quot;foo&quot;</span>.<span class="ident">to_string</span>(), <span class="ident">alloc</span>.<span class="ident">clone</span>());
 
-        <span class="kw">let</span> <span class="ident">ptr</span> <span class="op">=</span> <span class="ident">TestBox</span>::<span class="ident">into_raw</span>(<span class="ident">tb</span>);
+        <span class="kw">let</span> <span class="ident">ptr</span> <span class="op">=</span> <span class="ident">GBox</span>::<span class="ident">into_raw</span>(<span class="ident">tb</span>);
 
         <span class="kw">let</span> <span class="ident">layout</span> <span class="op">=</span> <span class="ident">Layout</span>::<span class="ident">new</span>::<span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>();
         <span class="kw">unsafe</span> {
@@ -852,15 +854,15 @@
     <span class="attribute">#[<span class="ident">test</span>]</span>
     <span class="attribute">#[<span class="ident">should_panic</span>]</span>
     <span class="kw">fn</span> <span class="ident">into_raw_without_free</span>() {
-        <span class="kw">let</span> <span class="ident">tb</span> <span class="op">=</span> <span class="ident">TestBox</span>::<span class="ident">new</span>(<span class="string">&quot;foo&quot;</span>.<span class="ident">to_string</span>(), <span class="ident">TestAlloc</span>::<span class="op">&lt;</span><span class="ident">System</span><span class="op">&gt;</span>::<span class="ident">default</span>());
+        <span class="kw">let</span> <span class="ident">tb</span> <span class="op">=</span> <span class="ident">GBox</span>::<span class="ident">from</span>(<span class="string">&quot;foo&quot;</span>.<span class="ident">to_string</span>());
 
-        <span class="kw">let</span> <span class="ident">ptr</span> <span class="op">=</span> <span class="ident">TestBox</span>::<span class="ident">into_raw</span>(<span class="ident">tb</span>);
+        <span class="kw">let</span> <span class="ident">ptr</span> <span class="op">=</span> <span class="ident">GBox</span>::<span class="ident">into_raw</span>(<span class="ident">tb</span>);
         <span class="kw">unsafe</span> { <span class="ident">ptr</span>.<span class="ident">drop_in_place</span>() };
     }
 
     <span class="attribute">#[<span class="ident">test</span>]</span>
     <span class="kw">fn</span> <span class="ident">clone</span>() {
-        <span class="kw">let</span> <span class="ident">tb</span> <span class="op">=</span> <span class="ident">TestBox</span>::<span class="ident">new</span>(<span class="number">35</span>, <span class="ident">TestAlloc</span>::<span class="op">&lt;</span><span class="ident">System</span><span class="op">&gt;</span>::<span class="ident">default</span>());
+        <span class="kw">let</span> <span class="ident">tb</span> <span class="op">=</span> <span class="ident">GBox</span>::<span class="ident">from</span>(<span class="number">35</span>);
         <span class="kw">let</span> <span class="ident">_cloned</span> <span class="op">=</span> <span class="ident">tb</span>.<span class="ident">clone</span>();
     }
 }
