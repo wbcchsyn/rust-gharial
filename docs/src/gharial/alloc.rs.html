@@ -276,6 +276,12 @@
 <span id="273">273</span>
 <span id="274">274</span>
 <span id="275">275</span>
+<span id="276">276</span>
+<span id="277">277</span>
+<span id="278">278</span>
+<span id="279">279</span>
+<span id="280">280</span>
+<span id="281">281</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright 2020 Shin Yoshida</span>
 <span class="comment">//</span>
@@ -354,6 +360,10 @@
 <span class="kw">use</span> <span class="ident">std</span>::<span class="ident">fmt</span>;
 <span class="kw">use</span> <span class="ident">std</span>::<span class="ident">sync</span>::{<span class="ident">Arc</span>, <span class="ident">Mutex</span>};
 
+<span class="doccomment">/// Alias to `TestAlloc&lt;System&gt;` .</span>
+<span class="doccomment">/// &#39;GAlloc&#39; stands for `Gharial Alloc`</span>
+<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">GAlloc</span> <span class="op">=</span> <span class="ident">TestAlloc</span><span class="op">&lt;</span><span class="ident">System</span><span class="op">&gt;</span>;
+
 <span class="doccomment">/// `TestAlloc` is a implementation for `GlobalAlloc` to test memory leak and so on.</span>
 <span class="doccomment">///</span>
 <span class="doccomment">/// It is a wrapper of another `GlobalAlloc` , and delegates the requests to the inner after testing.</span>
@@ -368,7 +378,9 @@
 <span class="doccomment">/// - All allocated memories have already been deallocated on the drop.</span>
 <span class="doccomment">///   (Note that cloned instances share the allocating memory information. The check is done when the</span>
 <span class="doccomment">///   last cloned instance is dropped.)</span>
-<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">TestAlloc</span><span class="op">&lt;</span><span class="ident">A</span> <span class="op">=</span> <span class="ident">System</span><span class="op">&gt;</span>
+<span class="doccomment">///</span>
+<span class="doccomment">/// See also [`GAlloc`] . It is an alias to `TestAlloc&lt;std::alloc::System&gt;` .</span>
+<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">TestAlloc</span><span class="op">&lt;</span><span class="ident">A</span><span class="op">&gt;</span>
 <span class="kw">where</span>
     <span class="ident">A</span>: <span class="ident">GlobalAlloc</span>,
 {
