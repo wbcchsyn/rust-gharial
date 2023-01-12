@@ -1,6 +1,6 @@
 [package]
 name = "gharial"
-version = "0.3.0"
+version = "0.3.1"
 authors = ["Yoshida Shin <wbcchsyn@gmail.com>"]
 edition = "2018"
 
@@ -11,7 +11,7 @@ Gharial is a test tool for program to manipulate memory directly.
 """
 
 readme = "README.md"
-documentation = "https://wbcchsyn.github.io/rust-gharial/gharial/"
+documentation = "https://docs.rs/gharial/0.3.1/gharial/"
 repository = "https://github.com/wbcchsyn/rust-gharial.git"
 
 keywords = ["test", "memory", "allocator"]

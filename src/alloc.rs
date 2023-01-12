@@ -81,15 +81,16 @@ pub type GAlloc = TestAlloc<System>;
 
 /// `TestAlloc` is a implementation for `GlobalAlloc` to test memory leak and so on.
 ///
-/// It is a wrapper of another `GlobalAlloc` , and delegates the requests to the inner after testing.
+/// It is a wrapper of another `GlobalAlloc`, and checks the requests delegating to the backend
+/// allocator.
 ///
 /// The checks are followings.
 ///
-/// - The argument `*mut u8` passed to `dealloc` is not null. (The behavior is undefined
-///   according to `GlobalAlloc` interface.)
-/// - The consistency of the argument `Layout` .
-///   i.e. the argument passed to `dealloc` matches to that passed to `alloc` having returned
-///   the corresponding pointer.
+/// - The argument `*mut u8` passed to `dealloc` is not null. (`GlobalAlloc` interface does not
+///   define the behavior.)
+/// - The consistency of the argument `Layout`.
+///   i.e. the argument passed to `dealloc` must matche to that passed to `alloc` to return the
+///   corresponding pointer.
 /// - All allocated memories have already been deallocated on the drop.
 ///   (Note that cloned instances share the allocating memory information. The check is done when the
 ///   last cloned instance is dropped.)
@@ -175,6 +176,21 @@ where
         }
 
         self.alloc.dealloc(ptr, layout);
+    }
+}
+
+impl<A> TestAlloc<A>
+where
+    A: GlobalAlloc,
+{
+    /// Returns the list of pointers and layouts that were allocated and not deallocated.
+    pub fn providing_pointers(&self) -> Vec<(*mut u8, Layout)> {
+        self.allocatings
+            .lock()
+            .unwrap()
+            .iter()
+            .map(|(&k, &v)| (k, v))
+            .collect()
     }
 }
 
