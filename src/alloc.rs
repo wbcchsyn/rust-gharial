@@ -179,6 +179,21 @@ where
     }
 }
 
+impl<A> TestAlloc<A>
+where
+    A: GlobalAlloc,
+{
+    /// Returns the list of pointers and layouts that were allocated and not deallocated.
+    pub fn providing_pointers(&self) -> Vec<(*mut u8, Layout)> {
+        self.allocatings
+            .lock()
+            .unwrap()
+            .iter()
+            .map(|(&k, &v)| (k, v))
+            .collect()
+    }
+}
+
 impl<A> fmt::Debug for TestAlloc<A>
 where
     A: GlobalAlloc + fmt::Debug,
