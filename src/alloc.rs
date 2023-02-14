@@ -71,7 +71,7 @@ extern crate rand;
 
 use core::alloc::{GlobalAlloc, Layout};
 use std::alloc::System;
-use std::collections::hash_map::HashMap;
+use std::collections::BTreeMap;
 use std::fmt;
 use std::sync::{Arc, Mutex};
 
@@ -101,7 +101,7 @@ where
     A: GlobalAlloc,
 {
     alloc: A,
-    allocatings: Arc<Mutex<HashMap<*mut u8, Layout>>>,
+    allocatings: Arc<Mutex<BTreeMap<*mut u8, Layout>>>,
 }
 
 impl<A> Default for TestAlloc<A>
@@ -144,7 +144,12 @@ where
     fn drop(&mut self) {
         if Arc::strong_count(&self.allocatings) == 1 {
             let allocatings = self.allocatings.lock().unwrap();
-            assert_eq!(true, allocatings.is_empty());
+            if allocatings.is_empty() == false {
+                let message0 = "Memory leak is detected";
+                let message1 =
+                    "The allocator is dropped before the allocated pointer is deallocated";
+                panic!("{}: {}", message0, message1);
+            }
         }
     }
 }
@@ -166,13 +171,19 @@ where
 
     unsafe fn dealloc(&self, ptr: *mut u8, layout: Layout) {
         // `GlobalAlloc::dealloc` interface does not define the behavior when ptr is null.
-        assert_eq!(false, ptr.is_null());
+        if ptr.is_null() {
+            panic!("Null pointer is passed to method GlobalAlloc.dealloc().");
+        }
 
         // Enclose to release the lock as soon as possible.
         {
             let mut allocatings = self.allocatings.lock().unwrap();
             let prev = allocatings.remove(&ptr).unwrap();
-            assert_eq!(layout, prev);
+            if layout != prev {
+                panic!(
+                    "GlobalAlloc.dealloc() is passed a different layout from GlobalAlloc.alloc()"
+                );
+            }
         }
 
         self.alloc.dealloc(ptr, layout);
@@ -184,6 +195,7 @@ where
     A: GlobalAlloc,
 {
     /// Returns the list of pointers and layouts that were allocated and not deallocated.
+    /// The returned value is sorted by the pointer.
     pub fn providing_pointers(&self) -> Vec<(*mut u8, Layout)> {
         self.allocatings
             .lock()
@@ -233,7 +245,7 @@ unsafe impl GlobalAlloc for NeverAlloc {
     }
 
     unsafe fn dealloc(&self, _ptr: *mut u8, _layout: Layout) {
-        assert!(false)
+        panic!("Method NeverAlloc.dealloc() is called.");
     }
 }
 
@@ -291,7 +303,9 @@ where
     }
 
     unsafe fn dealloc(&self, ptr: *mut u8, layout: Layout) {
-        assert_eq!(false, ptr.is_null());
+        if ptr.is_null() {
+            panic!("Null pointer is passed to method GlobalAlloc.dealloc().");
+        }
         self.alloc.dealloc(ptr, layout);
     }
 }
