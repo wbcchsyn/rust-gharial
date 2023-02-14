@@ -71,7 +71,7 @@ extern crate rand;
 
 use core::alloc::{GlobalAlloc, Layout};
 use std::alloc::System;
-use std::collections::hash_map::HashMap;
+use std::collections::BTreeMap;
 use std::fmt;
 use std::sync::{Arc, Mutex};
 
@@ -101,7 +101,7 @@ where
     A: GlobalAlloc,
 {
     alloc: A,
-    allocatings: Arc<Mutex<HashMap<*mut u8, Layout>>>,
+    allocatings: Arc<Mutex<BTreeMap<*mut u8, Layout>>>,
 }
 
 impl<A> Default for TestAlloc<A>
@@ -184,6 +184,7 @@ where
     A: GlobalAlloc,
 {
     /// Returns the list of pointers and layouts that were allocated and not deallocated.
+    /// The returned value is sorted by the pointer.
     pub fn providing_pointers(&self) -> Vec<(*mut u8, Layout)> {
         self.allocatings
             .lock()
